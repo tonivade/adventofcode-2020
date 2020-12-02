@@ -12,7 +12,7 @@ object Day1Util {
 
 object Day1Part1 extends App {
 
-  println("Day1Part1")
+  println("Day1 Part1")
 
   val result = Day1Util.combinations(2, 2020)
 
@@ -21,7 +21,7 @@ object Day1Part1 extends App {
 
 object Day1Part2 extends App {
 
-  println("Day1Part2")
+  println("Day1 Part2")
 
   val result = Day1Util.combinations(3, 2020)
 
