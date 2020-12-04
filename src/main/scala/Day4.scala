@@ -22,48 +22,41 @@ case class Passport(
 
 case class BirthYear(value: String) {
   val year = value.toInt
-  if (year < 1920 || year > 2002) 
-    throw new IllegalArgumentException(s"invalid birth year ${value}")
+  require(year >= 1920 && year <= 2002, s"invalid birth year ${value}")
 }
 
 case class IssueYear(value: String) {
   val year = value.toInt
-  if (year < 2010 || year > 2020) 
-    throw new IllegalArgumentException(s"invalid issue year ${value}")
+  require(year >= 2010 && year <= 2020, s"invalid issue year ${value}")
 }
 
 case class ExpirationYear(value: String) {
   val year = value.toInt
-  if (year < 2020 || year > 2030) 
-    throw new IllegalArgumentException(s"invalid expiration year ${value}")
+  require(year >= 2020 && year <= 2030, s"invalid expiration year ${value}")
 }
 
 case class Height(value: String) {
+  require(value.endsWith("cm") || value.endsWith("in"), s"invalid height ${value}")
   if (value.endsWith("cm")) {
     val height = value.substring(0, value.size - 2).toInt
-    if (height < 150 || height > 193)
-      throw new IllegalArgumentException(s"invalid height ${value}")
+    require(height >= 150 && height <= 193, s"invalid height ${value}")
   } else if (value.endsWith("in")) {
     val height = value.substring(0, value.size - 2).toInt
-    if (height < 59 || height > 76)
-      throw new IllegalArgumentException(s"invalid height ${value}")
-  } else throw new IllegalArgumentException(s"invalid height ${value}")
+    require(height >= 59 && height <= 76, s"invalid height ${value}")
+  }
 }
 
 case class HairColor(value: String) {
-  if (value.startsWith("#")) {
-    val color = Color.decode(value)
-  } else throw new IllegalArgumentException(s"invalid hair color ${value}")
+  require(value.startsWith("#"), s"invalid hair color ${value}")
+  Color.decode(value)
 }
 
 case class EyeColor(value: String) {
-  if (Set("amb", "blu", "brn", "gry", "grn", "hzl", "oth").contains(value)) {
-  } else throw new IllegalArgumentException(s"invalid eye color ${value}")
+  require(Set("amb", "blu", "brn", "gry", "grn", "hzl", "oth").contains(value), s"invalid eye color ${value}")
 }
 
 case class PassportId(value: String) {
-  if (value.size != 9)
-    throw new IllegalArgumentException(s"invalid passport id ${value}")
+  require(value.size == 9, s"invalid passport id ${value}")
 }
 
 case class CountryId(value: String)
