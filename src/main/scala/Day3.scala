@@ -86,7 +86,7 @@ object Day3Part2 extends App {
   println(result)
 }
 
-object Test extends App {
+object Day3Test extends App {
 
   println("Day3 Test")
 

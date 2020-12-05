@@ -17,7 +17,7 @@ case class Password(min: Int, max: Int, letter: Char, password: String) {
   }
 }
 
-object Day2Util {
+object Day2 {
 
   def parseLine(line: String): Password = {
     val split = line.split(':')
@@ -47,7 +47,7 @@ object Day2Part1 extends App {
 
   println("Day2 Part1")
 
-  val passwords = Day2Util.filter(_.isValidPart1)
+  val passwords = Day2.filter(_.isValidPart1)
 
   println(passwords.size)
 
@@ -57,7 +57,7 @@ object Day2Part2 extends App {
 
   println("Day2 Part2")
 
-  val passwords = Day2Util.filter(_.isValidPart2)
+  val passwords = Day2.filter(_.isValidPart2)
 
   println(passwords.size)
 
