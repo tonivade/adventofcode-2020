@@ -5,7 +5,6 @@ import scala.io.Source
 object Day7 {
 
   case class Bag(name: String, map: Map[String, Int]) {
-    val isEmpty = map.isEmpty
     def contains(other: String): Boolean = map.contains(other)
   }
 
@@ -13,23 +12,23 @@ object Day7 {
 
     val noBagsPattern = "(\\w+ \\w+) bags contain no other bags\\.".r
     val bagPattern1 = 
-      "(\\w+ \\w+) bags contain (([0-9]) (\\w+ \\w+) bags?\\.)".r
+      "(\\w+ \\w+) bags contain (?:([0-9]) (\\w+ \\w+) bags?\\.)".r
     val bagPattern2 = 
-      "(\\w+ \\w+) bags contain (([0-9]) (\\w+ \\w+) bags?,) (([0-9]) (\\w+ \\w+) bags?\\.)".r
+      "(\\w+ \\w+) bags contain (?:([0-9]) (\\w+ \\w+) bags?,) (?:([0-9]) (\\w+ \\w+) bags?\\.)".r
     val bagPattern3 = 
-      "(\\w+ \\w+) bags contain (([0-9]) (\\w+ \\w+) bags?,) (([0-9]) (\\w+ \\w+) bags?,) (([0-9]) (\\w+ \\w+) bags?\\.)".r
+      "(\\w+ \\w+) bags contain (?:([0-9]) (\\w+ \\w+) bags?,) (?:([0-9]) (\\w+ \\w+) bags?,) (?:([0-9]) (\\w+ \\w+) bags?\\.)".r
     val bagPattern4 = 
-      "(\\w+ \\w+) bags contain (([0-9]) (\\w+ \\w+) bags?,) (([0-9]) (\\w+ \\w+) bags?,) (([0-9]) (\\w+ \\w+) bags?,) (([0-9]) (\\w+ \\w+) bags?\\.)".r
+      "(\\w+ \\w+) bags contain (?:([0-9]) (\\w+ \\w+) bags?,) (?:([0-9]) (\\w+ \\w+) bags?,) (?:([0-9]) (\\w+ \\w+) bags?,) (?:([0-9]) (\\w+ \\w+) bags?\\.)".r
 
     line match {
       case noBagsPattern(name) => Bag(name, Map())
-      case bagPattern1(name, _, b, c) => 
+      case bagPattern1(name, b, c) => 
         Bag(name, Map(c -> b.toInt))
-      case bagPattern2(name, _, b, c, _, d, e) => 
+      case bagPattern2(name, b, c, d, e) => 
         Bag(name, Map(c -> b.toInt, e -> d.toInt))
-      case bagPattern3(name, _, b, c, _, d, e, _, f, g) => 
+      case bagPattern3(name, b, c, d, e, f, g) => 
         Bag(name, Map(c -> b.toInt, e -> d.toInt, g -> f.toInt))
-      case bagPattern4(name, _, b, c, _, d, e, _, f, g, _, h, i) => 
+      case bagPattern4(name, b, c, d, e, f, g, h, i) => 
         Bag(name, Map(c -> b.toInt, e -> d.toInt, g -> f.toInt, i -> h.toInt))
     }
   }
