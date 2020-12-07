@@ -5,6 +5,7 @@ import scala.io.Source
 object Day7 {
 
   case class Bag(name: String, map: Map[String, Int]) {
+    val isEmpty = map.isEmpty
     def contains(other: String): Boolean = map.contains(other)
   }
 
@@ -39,6 +40,9 @@ object Day7 {
     found ++ found.flatMap(b => search(b.name, bags))
   }
 
+  def count(name: String, bags: Map[String, Bag]): Int =
+    bags(name).map.foldLeft(1)((c, t) => c + (count(t._1, bags) * t._2))
+
   val input = Source.fromFile("src/main/resources/bags.txt").getLines().toList
 
 }
@@ -46,11 +50,21 @@ object Day7 {
 object Day7Part1 extends App {
   import Day7._
 
-  println("Day7 Part2")
+  println("Day7 Part1")
 
   val bags = input.map(parseLine)
 
   println(search("shiny gold", bags).size)
+}
+
+object Day7Part2 extends App {
+  import Day7._
+
+  println("Day7 Part2")
+
+  val bags = input.map(parseLine).map(b => (b.name, b)).toMap
+
+  println(count("shiny gold", bags) - 1)
 }
 
 object Day7Test extends App {
@@ -69,4 +83,16 @@ object Day7Test extends App {
   val bags = test.split("\n").map(parseLine).toList
 
   assert(search("shiny gold", bags).size == 4)
+
+  val test2 = """shiny gold bags contain 2 dark red bags.
+                |dark red bags contain 2 dark orange bags.
+                |dark orange bags contain 2 dark yellow bags.
+                |dark yellow bags contain 2 dark green bags.
+                |dark green bags contain 2 dark blue bags.
+                |dark blue bags contain 2 dark violet bags.
+                |dark violet bags contain no other bags.""".stripMargin
+  
+  val bags2 = test2.split("\n").map(parseLine).map(b => (b.name, b)).toMap
+
+  assert(count("shiny gold", bags2) - 1 == 126)
 }
