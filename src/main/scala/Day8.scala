@@ -10,12 +10,12 @@ object Day8 {
   case class Acc(value: Int) extends Op
   case class Jmp(value: Int) extends Op
 
-  type Program = Array[Op]
+  type Program = Vector[Op]
 
-  val Program = Array
+  val Program = Vector
 
   def parseProgram(input: String): Program =
-    input.split('\n').map(parseLine).toArray
+    input.split('\n').map(parseLine).toVector
 
   def parseLine(line: String): Op = {
     val split = line.splitAt(3)
@@ -28,15 +28,24 @@ object Day8 {
   }
 
   @tailrec
-  def runProgram(program: Program, acc: Int = 0, current: Int = 0, visited: Set[Int] = Set.empty): Int =
+  def runProgram(program: Program, acc: Int = 0, current: Int = 0, visited: Set[Int] = Set.empty): Either[Int, Int] =
     if (visited.contains(current))
-      acc
-    else
+      Left(acc)
+    else if (current < program.size)
       program(current) match {
         case Acc(value) => runProgram(program, acc + value, current + 1, visited + current)
         case Jmp(value) => runProgram(program, acc, current + value, visited + current)
         case NoOp => runProgram(program, acc, current + 1, visited + current)
       }
+    else
+      Right(acc)
+
+  def fix(program: Program, position: Int): Program = program.updated(position, NoOp)
+
+  def fixProgram(program: Program): Either[Int, Int] = 
+    program.zipWithIndex.filter(_._1.isInstanceOf[Jmp]).map(_._2).map(fix(program, _)).map(runProgram(_)).filter(_.isRight).head
+
+  val program = parseProgram(Source.fromFile("src/main/resources/boot.txt").mkString)
 }
 
 object Day8Part1 extends App {
@@ -44,9 +53,15 @@ object Day8Part1 extends App {
 
   println("Day8 Part1")
 
-  val program = parseProgram(Source.fromFile("src/main/resources/boot.txt").mkString)
-
   println(runProgram(program))
+}
+
+object Day8Part2 extends App {
+  import Day8._
+
+  println("Day8 Part2")
+
+  println(fixProgram(program))
 }
 
 object Day8Test extends App {
@@ -65,7 +80,9 @@ object Day8Test extends App {
 
   var program = parseProgram(input)
 
-  assert(runProgram(program) == 5)
+  assert(runProgram(program) == Left(5))
+
+  assert(fixProgram(program) == Right(8))
 
   println("OK")
 }
