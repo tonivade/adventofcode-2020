@@ -6,7 +6,7 @@ object Day9 {
   def isValid(numbers: Array[Long]): Boolean = {
     val last = numbers.last
     val preamble = numbers.dropRight(1)
-    preamble.combinations(2).map(x => x(0) + x(1)).exists(_ == last)
+    preamble.combinations(2).map(_.sum).exists(_ == last)
   }
 
   def findInvalid(input: Array[Long], preambleSize: Int): List[Long] =
