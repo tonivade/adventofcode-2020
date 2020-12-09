@@ -11,6 +11,14 @@ object Day9 {
 
   def findInvalid(input: Array[Long], preambleSize: Int): List[Long] =
     input.sliding(preambleSize + 1).filterNot(isValid).map(_.last).toList
+
+  def findSum(numbers: Array[Long], error: Long): List[Long] = 
+    (2 to numbers.size).flatMap(numbers.sliding(_).filter(_.sum == error)).head.toList
+
+  def findSecret(input: Array[Long], preambleSize: Int): List[Long] =
+    findInvalid(input, preambleSize).map(findSum(input, _)).map(x => x.min + x.max)
+  
+  val input = Source.fromFile("src/main/resources/encrypted.txt").getLines().map(_.toLong).toArray
 }
 
 object Day9Part1 extends App {
@@ -18,9 +26,15 @@ object Day9Part1 extends App {
 
   println("Day9 Part1")
 
-  val input = Source.fromFile("src/main/resources/encrypted.txt").getLines().map(_.toLong).toArray
-
   println(findInvalid(input, 25).head)
+}
+
+object Day9Part2 extends App {
+  import Day9._
+
+  println("Day9 Part")
+
+  println(findSecret(input, 25).head)
 }
 
 object Day9Test extends App {
@@ -52,6 +66,8 @@ object Day9Test extends App {
   val result = findInvalid(encrypted, 5)
 
   assert(result.head == 127)
+
+  assert(findSecret(encrypted, 5).head == 62)
 
   println("OK")
 }
