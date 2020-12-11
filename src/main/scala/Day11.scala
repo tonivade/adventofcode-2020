@@ -37,7 +37,7 @@ object Day11 {
     def map(f: (Position, Tile) => Tile): Matrix =
       Matrix(seats.zipWithIndex.map {
         case (row, y) => row.zipWithIndex.map {
-          case (t, x) => f(Position(x, y), seats(y)(x))
+          case (t, x) => f(Position(x, y), t)
         } 
       })
 
