@@ -10,23 +10,25 @@ object Day11 {
   case object Free extends Tile
   case object Occupied extends Tile
 
-  type Motion = Position => Position
+  type Motion = (Int, Int)
 
   case class Position(x: Int, y: Int) {
-    def move(motion: Motion): Position = motion(this)
+    def move(motion: Motion): Position = 
+      Position(x + motion._1, y + motion._2)
   }
 
   object Position {
-    val up: Motion = p => Position(p.x, p.y + 1)
-    val down: Motion = p => Position(p.x, p.y - 1)
-    val left: Motion = p => Position(p.x - 1, p.y)
-    val right: Motion = p => Position(p.x + 1, p.y)
-    val upLeft: Motion = p => Position(p.x - 1, p.y + 1)
-    val upRight: Motion = p => Position(p.x + 1, p.y + 1)
-    val downLeft: Motion = p => Position(p.x - 1, p.y - 1)
-    val downRight: Motion = p => Position(p.x + 1, p.y - 1)
+    val up: Motion = (0, 1)
+    val down: Motion = (0, -1)
+    val left: Motion = (-1, 0)
+    val right: Motion = (1, 0)
+    val upLeft: Motion = (-1, 1)
+    val upRight: Motion = (1, 1)
+    val downLeft: Motion = (-1, -1)
+    val downRight: Motion = (1, -1)
 
-    val movements = List(up, down, left, right, upLeft, upRight, downLeft, downRight)
+    val movements = 
+      List(up, down, left, right, upLeft, upRight, downLeft, downRight)
   }
 
   case class Matrix(seats: Vector[Vector[Tile]]) {
