@@ -18,24 +18,23 @@ object Day10 {
       .map(t => (t._1, t._2.size))
       .toMap
 
+  // impossible to compute all combinations for a real input
   def arrangeAdapters(adapters: List[Int]): Set[Set[Int]] = {
-    val all = find(adapters).map(_._2)
+    val all = find(adapters).map(_._2).dropRight(1)
 
-    val acc = all.head.map(Set(_)).toSet
-
-    all.tail.foldLeft(acc)((a, e) =>
-      e match {
-        case Nil => a
-        case _ => 
-          for { 
-            x <- a 
-            y <- e
-          } yield (x + y)
-      }
-    )
+    all.foldLeft(Set(Set.empty[Int]))((a, e) => a.flatMap(i => e.map(j => i ++ Set(j))))
   }
 
-  var input = Source.fromResource("jolts.txt").getLines().map(_.toInt).toList
+  def arrangeAdapters2(adapters: List[Int]): Long = {
+    val result = adapters.sorted.foldLeft(Map(0 -> 1L)) {
+      case (counts, next) =>
+        val count = (next - 3 to next - 1).map(counts.getOrElse(_, 0L)).sum
+        counts + (next -> count)
+    }
+    result(adapters.max)
+  }
+
+  val input = Source.fromResource("jolts.txt").getLines().map(_.toInt).toList
 }
 
 object Day10Part1 extends App {
@@ -51,7 +50,7 @@ object Day10Part2 extends App {
 
   println("Day10 Part2")
 
-  println(arrangeAdapters(input).size)
+  println(arrangeAdapters2(input))
 }
 
 object Day10Test extends App {
@@ -74,6 +73,7 @@ object Day10Test extends App {
   assert(result1(1) == 7)
   assert(result1(3) == 5)
   assert(arrangeAdapters(input1).size == 8)
+  assert(arrangeAdapters2(input1) == 8)
 
   val input2 = """28
                  |33
@@ -112,6 +112,7 @@ object Day10Test extends App {
   assert(result2(1) == 22)
   assert(result2(3) == 10)
   assert(arrangeAdapters(input2).size == 19208)
+  assert(arrangeAdapters2(input2) == 19208)
 
   println("OK")
 }
