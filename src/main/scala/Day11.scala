@@ -17,7 +17,7 @@ object Day11 {
       Position(x + motion._1, y + motion._2)
   }
 
-  object Position {
+  object Motion {
     val up: Motion = (0, 1)
     val down: Motion = (0, -1)
     val left: Motion = (-1, 0)
@@ -32,7 +32,7 @@ object Day11 {
   }
 
   case class Matrix(seats: Vector[Vector[Tile]]) {
-    import Position.movements
+    import Motion.movements
 
     def map(f: (Position, Tile) => Tile): Matrix =
       Matrix(seats.zipWithIndex.map {
@@ -102,12 +102,12 @@ object Day11 {
     } 
 
   @tailrec
-  def caos(matrix: Matrix, applyRules: Matrix => Matrix): Matrix = {
-    val m = applyRules(matrix)
-    if (m == matrix) 
-      m
+  def caos(matrix: Matrix, rules: Matrix => Matrix): Matrix = {
+    val m = rules(matrix)
+    if (m.mkString == matrix.mkString) 
+      matrix
     else
-      caos(m, applyRules)
+      caos(m, rules)
   }
 
   val input = parseMatrix(Source.fromResource("ferry.txt").mkString)
