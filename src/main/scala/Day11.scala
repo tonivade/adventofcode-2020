@@ -5,36 +5,74 @@ import scala.io.Source
 
 object Day11 {
 
-  sealed trait Tile extends Product with Serializable
+  sealed trait Tile
   case object Floor extends Tile
   case object Free extends Tile
   case object Occupied extends Tile
 
-  case class Matrix(seats: Vector[Vector[Tile]]) {
+  type Motion = Position => Position
 
-    def get(x: Int, y: Int): Option[Tile] =
-      if (seats.isDefinedAt(y) && seats(y).isDefinedAt(x))
-        Some(seats(y)(x))
+  case class Position(x: Int, y: Int) {
+    def move(motion: Motion): Position = motion(this)
+  }
+
+  object Position {
+    val up: Motion = p => Position(p.x, p.y + 1)
+    val down: Motion = p => Position(p.x, p.y - 1)
+    val left: Motion = p => Position(p.x - 1, p.y)
+    val right: Motion = p => Position(p.x + 1, p.y)
+    val upLeft: Motion = p => Position(p.x - 1, p.y + 1)
+    val upRight: Motion = p => Position(p.x + 1, p.y + 1)
+    val downLeft: Motion = p => Position(p.x - 1, p.y - 1)
+    val downRight: Motion = p => Position(p.x + 1, p.y - 1)
+
+    val movements = List(up, down, left, right, upLeft, upRight, downLeft, downRight)
+  }
+
+  case class Matrix(seats: Vector[Vector[Tile]]) {
+    import Position.movements
+
+    def map(f: (Position, Tile) => Tile): Matrix =
+      Matrix(seats.zipWithIndex.map {
+        case (row, y) => row.zipWithIndex.map {
+          case (t, x) => f(Position(x, y), seats(y)(x))
+        } 
+      })
+
+    def get(p: Position): Option[Tile] =
+      if (seats.isDefinedAt(p.y) && seats(p.y).isDefinedAt(p.x))
+        Some(seats(p.y)(p.x))
       else
         None
 
-    def adjacentTo(x: Int, y: Int): List[Tile] = {
-      val up = (x, y + 1)
-      val down = (x, y - 1)
-      val left = (x - 1, y)
-      val right = (x + 1, y)
-      val upLeft = (x - 1, y + 1)
-      val upRight = (x + 1, y + 1)
-      val downLeft = (x - 1, y - 1)
-      val downRight = (x + 1, y - 1)
+    def adjacentTo(p: Position): Int =
+      movements.flatMap(move(p, _).toList).count(_ == Occupied)
 
-      List(up, down, left, right, upLeft, upRight, downLeft, downRight).map { 
-        case (x, y) => get(x, y) 
-      }.flatMap(_.toList).filterNot(_ == Floor)
-    }
+    def visibleFrom(p: Position): Int =
+      movements.flatMap(search(p, _)).size
+
+    @tailrec
+    final def search(p: Position, motion: Motion): List[Tile] = 
+      move(p, motion) match {
+        case Some(Occupied) => Occupied :: Nil
+        case Some(Free) => search(p.move(motion), motion)
+        case Some(Floor) => search(p.move(motion), motion)
+        case None => Nil
+      }
+
+    def move(p: Position, motion: Motion): Option[Tile] = 
+      get(p.move(motion))
 
     def occupied: Int = seats.flatMap(identity).count(_ == Occupied)
 
+    def mkString: String = 
+      seats.zipWithIndex.map {
+        case (row, _) => row.zipWithIndex.map {
+          case (Free, _) => 'L'
+          case (Occupied, _) => '#'
+          case (Floor, _) => '.'
+        } 
+      }.map(_.mkString).mkString("\n")
   }
 
   def parseLine(line: String): Vector[Tile] = 
@@ -44,56 +82,93 @@ object Day11 {
       case '#' => Occupied
     }).toVector
 
-  def applyRules(matrix: Matrix): Matrix = {
+  def parseMatrix(input: String): Matrix = 
+    Matrix(input.linesIterator.map(parseLine).toVector)
 
-    val after: Vector[Vector[Tile]] = matrix.seats.zipWithIndex.map { 
-      case (row, y) => row.zipWithIndex.map {
-        case (Floor, x) => Floor
-        case (Occupied, x) => if (matrix.adjacentTo(x, y).count(_ == Occupied) > 3) Free else Occupied
-        case (Free, x) => if (matrix.adjacentTo(x, y).forall(_ == Free) ) Occupied else Free
-      } 
-    }
+  def applyRules: Matrix => Matrix = m =>
+    m.map {
+      case (p, Floor) => Floor
+      case (p, Occupied) => if (m.adjacentTo(p) >= 4) Free else Occupied
+      case (p, Free) => if (m.adjacentTo(p) == 0) Occupied else Free
+    } 
 
-    Matrix(after)
-  }
+  def applyRules2: Matrix => Matrix = m =>
+    m.map {
+      case (p, Floor) => Floor
+      case (p, Occupied) => if (m.visibleFrom(p) >= 5) Free else Occupied
+      case (p, Free) => if (m.visibleFrom(p) == 0) Occupied else Free
+    } 
 
   @tailrec
-  def caos(matrix: Matrix): Matrix = {
+  def caos(matrix: Matrix, applyRules: Matrix => Matrix): Matrix = {
     val m = applyRules(matrix)
     if (m == matrix) 
       m
     else
-      caos(m)
+      caos(m, applyRules)
   }
+
+  val input = parseMatrix(Source.fromResource("ferry.txt").mkString)
 }
 
 object Day11Part1 extends App {
   import Day11._
 
-  val input = Source.fromResource("ferry.txt").getLines().map(parseLine).toVector
+  println(caos(input, applyRules).occupied)
+}
 
-  println(caos(Matrix(input)).occupied)
+object Day11Part2 extends App {
+  import Day11._
+
+  println(caos(input, applyRules2).occupied)
 }
 
 object Day11Test extends App {
   import Day11._
 
-  val input = """L.LL.LL.LL
-                |LLLLLLL.LL
-                |L.L.L..L..
-                |LLLL.LL.LL
-                |L.LL.LL.LL
-                |L.LLLLL.LL
-                |..L.L.....
-                |LLLLLLLLLL
-                |L.LLLLLL.L
-                |L.LLLLL.LL""".stripMargin
+  val input1 = """L.LL.LL.LL
+                 |LLLLLLL.LL
+                 |L.L.L..L..
+                 |LLLL.LL.LL
+                 |L.LL.LL.LL
+                 |L.LLLLL.LL
+                 |..L.L.....
+                 |LLLLLLLLLL
+                 |L.LLLLLL.L
+                 |L.LLLLL.LL""".stripMargin
+  val map1 = parseMatrix(input1)
+  assert(caos(map1, applyRules).occupied == 37)
 
-  val map = input.linesIterator.map(parseLine).toVector
+  val input2 = """.......#.
+                 |...#.....
+                 |.#.......
+                 |.........
+                 |..#L....#
+                 |....#....
+                 |.........
+                 |#........
+                 |...#.....""".stripMargin
+  val map2 = parseMatrix(input2)
+  assert(map2.visibleFrom(Position(3, 4)) == 8)
 
-  val m = Matrix(map)
+  val input3 = """.##.##.
+                 |#.#.#.#
+                 |##...##
+                 |...L...
+                 |##...##
+                 |#.#.#.#
+                 |.##.##.""".stripMargin
+  val map3 = parseMatrix(input3)
+  assert(map3.visibleFrom(Position(3, 3)) == 0)
 
-  assert(caos(m).occupied == 37)
+  val input4 = """.............
+                 |.L.L.#.#.#.#.
+                 |.............""".stripMargin
+  val map4 = parseMatrix(input4)
+  assert(map4.visibleFrom(Position(1, 1)) == 1)
+  assert(map4.visibleFrom(Position(3, 1)) == 1)
+  
+  println(caos(map1, applyRules2).occupied == 26)
 
   println("OK")
 }
