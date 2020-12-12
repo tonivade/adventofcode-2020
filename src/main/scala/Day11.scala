@@ -104,14 +104,12 @@ object Day11 {
     } 
 
   @tailrec
-  def caos(matrix: Matrix, rules: Matrix => Matrix, counter: Int = 1): (Matrix, Int) = {
+  def caos(matrix: Matrix, rules: Matrix => Matrix): Matrix = {
     val m = rules(matrix)
-    //println(s"step: $counter")
-    //println(m.mkString)
     if (m == matrix) 
-      (matrix, counter)
+      matrix
     else
-      caos(m, rules, counter + 1)
+      caos(m, rules)
   }
 
   val input = parseMatrix(Source.fromResource("ferry.txt").mkString)
@@ -120,13 +118,13 @@ object Day11 {
 object Day11Part1 extends App {
   import Day11._
 
-  println(caos(input, applyRules)._1.occupied)
+  println(caos(input, applyRules).occupied)
 }
 
 object Day11Part2 extends App {
   import Day11._
 
-  println(caos(input, applyRules2)._1.occupied)
+  println(caos(input, applyRules2).occupied)
 }
 
 object Day11Test1 extends App {
@@ -143,7 +141,7 @@ object Day11Test1 extends App {
                  |L.LLLLLL.L
                  |L.LLLLL.LL""".stripMargin
   val map1 = parseMatrix(input1)
-  assert(caos(map1, applyRules)._1.occupied == 37)
+  assert(caos(map1, applyRules).occupied == 37)
 
   val input2 = """.......#.
                  |...#.....
@@ -174,7 +172,7 @@ object Day11Test1 extends App {
   assert(map4.visibleFrom(Position(1, 1)) == 0)
   assert(map4.visibleFrom(Position(3, 1)) == 1)
   
-  assert(caos(map1, applyRules2)._1.occupied == 26)
+  assert(caos(map1, applyRules2).occupied == 26)
 
   println("OK")
 }
