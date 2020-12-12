@@ -68,17 +68,17 @@ object Day11 {
     def occupied: Int = seats.flatMap(identity).count(_ == Occupied)
 
     def mkString: String = 
-      seats.zipWithIndex.map {
-        case (row, _) => row.zipWithIndex.map {
-          case (Free, _) => 'L'
-          case (Occupied, _) => '#'
-          case (Floor, _) => '.'
-        } 
-      }.map(_.mkString).mkString("\n")
+      seats.map(
+        _.map {
+          case Free => 'L'
+          case Occupied => '#'
+          case Floor => '.'
+        }.mkString
+      ).mkString("\n")
   }
 
   def parseLine(line: String): Vector[Tile] = 
-    line.map(c => c match {
+    line.map(_ match {
       case '.' => Floor
       case 'L' => Free
       case '#' => Occupied
@@ -139,6 +139,7 @@ object Day11Test extends App {
                  |L.LLLLLL.L
                  |L.LLLLL.LL""".stripMargin
   val map1 = parseMatrix(input1)
+  assert(map1.mkString == input1)
   assert(caos(map1, applyRules).occupied == 37)
 
   val input2 = """.......#.
@@ -170,7 +171,7 @@ object Day11Test extends App {
   assert(map4.visibleFrom(Position(1, 1)) == 1)
   assert(map4.visibleFrom(Position(3, 1)) == 1)
   
-  println(caos(map1, applyRules2).occupied == 26)
+  println(caos(map1, applyRules2).mkString)
 
   println("OK")
 }
