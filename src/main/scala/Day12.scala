@@ -88,21 +88,22 @@ object Day12 {
     def east(v: Int): Position = Position(x + v, y)
     def west(v: Int): Position = Position(x - v, y)
 
-    def move(waypoint: Position, value: Int) = 
-      Position(x + (waypoint.x * value), y + (waypoint.y * value))
+    def move(waypoint: Position, multiplier: Int) = 
+      Position(x + (waypoint.x * multiplier), y + (waypoint.y * multiplier))
 
+
+    def left(degree: Int): Position = 
+      degree match {
+        case 90 => Position(-y, x)
+        case 180 => Position(-x, -y)
+        case 270 => Position(y, -x)
+      }
+      
     def right(degree: Int): Position = 
       degree match {
         case 90 => Position(y, -x)
         case 180 => Position(-x, -y)
-        case 270 => Position(-y, -x)
-      }
-      
-    def left(degree: Int): Position = 
-      degree match {
-        case 90 => Position(-y, -x)
-        case 180 => Position(-x, -y)
-        case 270 => Position(y, -x)
+        case 270 => Position(-y, x)
       }
   }
 
@@ -178,6 +179,14 @@ object Day12Part2 extends App {
 object Day12Test extends App {
   import Day12._
 
+  assert(Position(10, 4).left(90) == Position(-4, 10))
+  assert(Position(10, 4).left(180) == Position(-10, -4))
+  assert(Position(10, 4).left(270) == Position(4, -10))
+
+  assert(Position(10, 4).right(90) == Position(4, -10))
+  assert(Position(10, 4).right(180) == Position(-10, -4))
+  assert(Position(10, 4).right(270) == Position(-4, 10))
+
   val input1 = """F10
                  |N3
                  |F7
@@ -188,14 +197,6 @@ object Day12Test extends App {
 
   assert(seal(nav)._2.distance == 25)
   assert(seal2(nav)._2.distance == 286)
-
-  assert(Position(10, 4).right(90) == Position(4, -10))
-  assert(Position(10, 4).right(180) == Position(-10, -4))
-  assert(Position(10, 4).right(270) == Position(-4, -10))
-
-  assert(Position(10, 4).left(270) == Position(4, -10))
-  assert(Position(10, 4).left(180) == Position(-10, -4))
-  assert(Position(10, 4).left(90) == Position(-4, -10))
 
   println("OK")
 }
