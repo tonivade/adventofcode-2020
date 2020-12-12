@@ -76,9 +76,9 @@ object Day12 {
   case object Left extends Move
   case object Right extends Move
 
-  sealed trait Nav
-  case class MoveNav(op: Move, value: Int) extends Nav
-  case class DirectionNav(op: Direction, value: Int) extends Nav
+  sealed trait Action
+  case class MoveAction(op: Move, value: Int) extends Action
+  case class DirectionAction(op: Direction, value: Int) extends Action
 
   case class Position(x: Int, y: Int) {
     lazy val distance = Math.abs(x) + Math.abs(y)
@@ -89,34 +89,34 @@ object Day12 {
     def west(v: Int): Position = Position(x - v, y)
   }
 
-  def parseLine(line: String): Nav =
+  def parseLine(line: String): Action =
     line.splitAt(1) match {
-      case ("N", x) => DirectionNav(North, x.toInt)
-      case ("S", x) => DirectionNav(South, x.toInt)
-      case ("E", x) => DirectionNav(East, x.toInt)
-      case ("W", x) => DirectionNav(West, x.toInt)
-      case ("F", x) => MoveNav(Forward, x.toInt)
-      case ("L", x) => MoveNav(Left, x.toInt)
-      case ("R", x) => MoveNav(Right, x.toInt)
+      case ("N", x) => DirectionAction(North, x.toInt)
+      case ("S", x) => DirectionAction(South, x.toInt)
+      case ("E", x) => DirectionAction(East, x.toInt)
+      case ("W", x) => DirectionAction(West, x.toInt)
+      case ("F", x) => MoveAction(Forward, x.toInt)
+      case ("L", x) => MoveAction(Left, x.toInt)
+      case ("R", x) => MoveAction(Right, x.toInt)
       case _ => throw new IllegalArgumentException(s"invalid format: $line")
     }
     
   val initial: (Direction, Position) = (East, Position(0, 0))
 
-  def seal(input: List[Nav]): (Direction, Position) =
+  def seal(input: List[Action]): (Direction, Position) =
     input.foldLeft(initial) {
-      case ((dir, current), DirectionNav(North, x)) => (dir, current.north(x))
-      case ((dir, current), DirectionNav(South, x)) => (dir, current.south(x))
-      case ((dir, current), DirectionNav(East, x)) => (dir, current.east(x))
-      case ((dir, current), DirectionNav(West, x)) => (dir, current.west(x))
+      case ((dir, current), DirectionAction(North, x)) => (dir, current.north(x))
+      case ((dir, current), DirectionAction(South, x)) => (dir, current.south(x))
+      case ((dir, current), DirectionAction(East, x)) => (dir, current.east(x))
+      case ((dir, current), DirectionAction(West, x)) => (dir, current.west(x))
 
-      case ((North, current), MoveNav(Forward, x)) => (North, current.north(x))
-      case ((South, current), MoveNav(Forward, x)) => (South, current.south(x))
-      case ((East, current), MoveNav(Forward, x)) => (East, current.east(x))
-      case ((West, current), MoveNav(Forward, x)) => (West, current.west(x))
+      case ((North, current), MoveAction(Forward, x)) => (North, current.north(x))
+      case ((South, current), MoveAction(Forward, x)) => (South, current.south(x))
+      case ((East, current), MoveAction(Forward, x)) => (East, current.east(x))
+      case ((West, current), MoveAction(Forward, x)) => (West, current.west(x))
 
-      case ((dir, current), MoveNav(Right, x)) => (dir.right(x), current)
-      case ((dir, current), MoveNav(Left, x)) => (dir.left(x), current)
+      case ((dir, current), MoveAction(Right, x)) => (dir.right(x), current)
+      case ((dir, current), MoveAction(Left, x)) => (dir.left(x), current)
     }
 }
 
