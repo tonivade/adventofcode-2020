@@ -87,6 +87,23 @@ object Day12 {
     def south(v: Int): Position = Position(x, y - v)
     def east(v: Int): Position = Position(x + v, y)
     def west(v: Int): Position = Position(x - v, y)
+
+    def move(waypoint: Position, value: Int) = 
+      Position(x + (waypoint.x * value), y + (waypoint.y * value))
+
+    def right(degree: Int): Position = 
+      degree match {
+        case 90 => Position(y, -x)
+        case 180 => Position(-x, -y)
+        case 270 => Position(-y, -x)
+      }
+      
+    def left(degree: Int): Position = 
+      degree match {
+        case 90 => Position(-y, -x)
+        case 180 => Position(-x, -y)
+        case 270 => Position(y, -x)
+      }
   }
 
   def parseLine(line: String): Action =
@@ -102,9 +119,13 @@ object Day12 {
     }
     
   val initial: (Direction, Position) = (East, Position(0, 0))
+  val initial2: (Direction, Position, Position) = (East, Position(0, 0), Position(10, 1))
 
   def seal(input: List[Action]): (Direction, Position) =
-    input.foldLeft(initial) {
+    input.foldLeft(initial)(step)
+  
+  def step(input: (Direction, Position), action: Action): (Direction, Position) =
+    (input, action) match {
       case ((dir, current), DirectionAction(North, x)) => (dir, current.north(x))
       case ((dir, current), DirectionAction(South, x)) => (dir, current.south(x))
       case ((dir, current), DirectionAction(East, x)) => (dir, current.east(x))
@@ -118,6 +139,24 @@ object Day12 {
       case ((dir, current), MoveAction(Right, x)) => (dir.right(x), current)
       case ((dir, current), MoveAction(Left, x)) => (dir.left(x), current)
     }
+
+  def seal2(input: List[Action]): (Direction, Position, Position) =
+    input.foldLeft(initial2)(step2)
+  
+  def step2(input: (Direction, Position, Position), action: Action): (Direction, Position, Position) =
+    (input, action) match {
+      case ((dir, current, waypoint), DirectionAction(North, x)) => (dir, current, waypoint.north(x))
+      case ((dir, current, waypoint), DirectionAction(South, x)) => (dir, current, waypoint.south(x))
+      case ((dir, current, waypoint), DirectionAction(East, x)) => (dir, current, waypoint.east(x))
+      case ((dir, current, waypoint), DirectionAction(West, x)) => (dir, current, waypoint.west(x))
+
+      case ((dir, current, waypoint), MoveAction(Forward, x)) => (dir, current.move(waypoint, x), waypoint)
+
+      case ((dir, current, waypoint), MoveAction(Right, x)) => (dir, current, waypoint.right(x))
+      case ((dir, current, waypoint), MoveAction(Left, x)) => (dir, current, waypoint.left(x))
+    }
+
+  val input = Source.fromResource("navigation.txt").getLines().map(parseLine).toList
 }
 
 object Day12Part1 extends App {
@@ -125,13 +164,18 @@ object Day12Part1 extends App {
 
   println("Day12 Part1")
 
-  val input = Source.fromResource("navigation.txt").getLines().map(parseLine).toList
-
   println(seal(input)._2.distance)
 }
 
-object Day12Test extends App {
+object Day12Part2 extends App {
+  import Day12._
 
+  println("Day12 Part2")
+
+  println(seal2(input)._2.distance)
+}
+
+object Day12Test extends App {
   import Day12._
 
   val input1 = """F10
@@ -143,6 +187,15 @@ object Day12Test extends App {
   val nav = input1.linesIterator.map(parseLine).toList
 
   assert(seal(nav)._2.distance == 25)
+  assert(seal2(nav)._2.distance == 286)
+
+  assert(Position(10, 4).right(90) == Position(4, -10))
+  assert(Position(10, 4).right(180) == Position(-10, -4))
+  assert(Position(10, 4).right(270) == Position(-4, -10))
+
+  assert(Position(10, 4).left(270) == Position(4, -10))
+  assert(Position(10, 4).left(180) == Position(-10, -4))
+  assert(Position(10, 4).left(90) == Position(-4, -10))
 
   println("OK")
 }
