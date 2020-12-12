@@ -47,19 +47,21 @@ object Day11 {
       else
         None
 
-    def adjacentTo(p: Position): Int =
+    def adjacentTo(p: Position): Int = {
       movements.flatMap(move(p, _).toList).count(_ == Occupied)
+    } ensuring (_ <= 8)
 
-    def visibleFrom(p: Position): Int =
-      movements.flatMap(search(p, _)).size
+    def visibleFrom(p: Position): Int = {
+      movements.flatMap(search(p, _).toList).count(_ == Occupied)
+    } ensuring (_ <= 8)
 
     @tailrec
-    final def search(p: Position, motion: Motion): List[Tile] = 
+    final def search(p: Position, motion: Motion): Option[Tile] = 
       move(p, motion) match {
-        case Some(Occupied) => Occupied :: Nil
-        case Some(Free) => search(p.move(motion), motion)
+        case Some(Occupied) => Some(Occupied)
+        case Some(Free) => Some(Free)
         case Some(Floor) => search(p.move(motion), motion)
-        case None => Nil
+        case None => None
       }
 
     def move(p: Position, motion: Motion): Option[Tile] = 
@@ -102,12 +104,14 @@ object Day11 {
     } 
 
   @tailrec
-  def caos(matrix: Matrix, rules: Matrix => Matrix): Matrix = {
+  def caos(matrix: Matrix, rules: Matrix => Matrix, counter: Int = 1): (Matrix, Int) = {
     val m = rules(matrix)
-    if (m.mkString == matrix.mkString) 
-      matrix
+    //println(s"step: $counter")
+    //println(m.mkString)
+    if (m == matrix) 
+      (matrix, counter)
     else
-      caos(m, rules)
+      caos(m, rules, counter + 1)
   }
 
   val input = parseMatrix(Source.fromResource("ferry.txt").mkString)
@@ -116,16 +120,16 @@ object Day11 {
 object Day11Part1 extends App {
   import Day11._
 
-  println(caos(input, applyRules).occupied)
+  println(caos(input, applyRules)._1.occupied)
 }
 
 object Day11Part2 extends App {
   import Day11._
 
-  println(caos(input, applyRules2).occupied)
+  println(caos(input, applyRules2)._1.occupied)
 }
 
-object Day11Test extends App {
+object Day11Test1 extends App {
   import Day11._
 
   val input1 = """L.LL.LL.LL
@@ -139,8 +143,7 @@ object Day11Test extends App {
                  |L.LLLLLL.L
                  |L.LLLLL.LL""".stripMargin
   val map1 = parseMatrix(input1)
-  assert(map1.mkString == input1)
-  assert(caos(map1, applyRules).occupied == 37)
+  assert(caos(map1, applyRules)._1.occupied == 37)
 
   val input2 = """.......#.
                  |...#.....
@@ -168,10 +171,10 @@ object Day11Test extends App {
                  |.L.L.#.#.#.#.
                  |.............""".stripMargin
   val map4 = parseMatrix(input4)
-  assert(map4.visibleFrom(Position(1, 1)) == 1)
+  assert(map4.visibleFrom(Position(1, 1)) == 0)
   assert(map4.visibleFrom(Position(3, 1)) == 1)
   
-  println(caos(map1, applyRules2).mkString)
+  assert(caos(map1, applyRules2)._1.occupied == 26)
 
   println("OK")
 }
