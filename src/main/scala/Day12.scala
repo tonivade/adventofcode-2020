@@ -117,8 +117,6 @@ object Day12 {
 
       case ((dir, current), MoveNav(Right, x)) => (dir.right(x), current)
       case ((dir, current), MoveNav(Left, x)) => (dir.left(x), current)
-      
-      case e => throw new IllegalArgumentException(s"invalid format: $e")
     }
 }
 
