@@ -17,17 +17,41 @@ object Day13 {
     buses.map(b => (b, b - timestamp % b)).minBy(_._2)
 
   @tailrec
-  def search2(buses: Seq[(Int, Int)], m: Long = 1): Long = {
+  def search2(buses: Seq[(Int, Int)], m: BigInt = 1): BigInt = {
     val x = buses.head._1 * m
     
     val a = buses.tail.map(t => (x + t._2) % t._1).toVector
 
-    if (a.forall(_ == 0)) {
-      println(m)
+    if (a.forall(_ == 0)) 
       x
-    }
     else
       search2(buses, m + 1)
+  }
+
+  def search3(buses: Seq[(Int, Int)]): BigInt = {
+    val p = buses.map(_._1).foldLeft(BigInt(1))(_ * _)
+    val q = buses.tail.map {
+      case (bus, pos) => {
+        val n = buses.filterNot(_._1 == bus).map(_._1).foldLeft(BigInt(1))(_ * _)
+        val x = gcd(n, bus)
+        val rest = bus - (BigInt(pos) % bus)
+        rest * n * x
+      }
+    }.sum
+    
+    q.mod(p)
+  }
+
+  def gcd(i: BigInt, j: BigInt): BigInt = {
+    @tailrec
+    def loop(a: BigInt, b: BigInt, x: BigInt, y: BigInt, r: BigInt, s: BigInt): BigInt =
+      if (b != 0) {
+        val q = a / b
+
+        loop(b, a % b, r, s, x - q * r, y - q * s)
+      } else x
+
+    loop(i, j, 1, 0, 0, 1)
   }
 }
 
@@ -47,9 +71,8 @@ object Day13Part2 extends App {
 
   val buses = parseBusesWithPosition(input(1))
 
-  println(search2(buses))
+  println(search3(buses))
 }
-
 
 object Day13Test extends App {
   import Day13._
@@ -64,12 +87,12 @@ object Day13Test extends App {
 
   val busesWithPosition = parseBusesWithPosition(input1)
 
-  assert(search2(busesWithPosition) == 1068781)
-  assert(search2(parseBusesWithPosition("17,x,13,19")) == 3417)
-  assert(search2(parseBusesWithPosition("67,7,59,61")) == 754018)
-  assert(search2(parseBusesWithPosition("67,x,7,59,61")) == 779210)
-  assert(search2(parseBusesWithPosition("67,7,x,59,61")) == 1261476)
-  assert(search2(parseBusesWithPosition("1789,37,47,1889")) == 1202161486)
+  assert(search3(busesWithPosition) == 1068781)
+  assert(search3(parseBusesWithPosition("17,x,13,19")) == 3417)
+  assert(search3(parseBusesWithPosition("67,7,59,61")) == 754018)
+  assert(search3(parseBusesWithPosition("67,x,7,59,61")) == 779210)
+  assert(search3(parseBusesWithPosition("67,7,x,59,61")) == 1261476)
+  assert(search3(parseBusesWithPosition("1789,37,47,1889")) == 1202161486)
 
   println("OK")
 }
