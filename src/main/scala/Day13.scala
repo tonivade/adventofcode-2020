@@ -2,6 +2,7 @@ package adventofcode
 
 import scala.io.Source
 import scala.annotation.tailrec
+import scala.sys.process.processInternal
 
 object Day13 {
   
@@ -16,6 +17,7 @@ object Day13 {
   def search(timestamp: Int, buses: Seq[Int]): (Int, Int) =
     buses.map(b => (b, b - timestamp % b)).minBy(_._2)
 
+  // brute force algorithm
   @tailrec
   def search2(buses: Seq[(Int, Int)], m: BigInt = 1): BigInt = {
     val x = buses.head._1 * m
@@ -28,21 +30,20 @@ object Day13 {
       search2(buses, m + 1)
   }
 
+  // based on this: https://www.freecodecamp.org/news/how-to-implement-the-chinese-remainder-theorem-in-java-db88a3f1ffe0/
   def search3(buses: Seq[(Int, Int)]): BigInt = {
-    val p = buses.map(_._1).foldLeft(BigInt(1))(_ * _)
-    val q = buses.tail.map {
-      case (bus, pos) => {
-        val n = buses.filterNot(_._1 == bus).map(_._1).foldLeft(BigInt(1))(_ * _)
-        val x = gcd(n, bus)
-        val rest = bus - (BigInt(pos) % bus)
-        rest * n * x
-      }
-    }.sum
-    
-    q.mod(p)
+    val product = buses.map(_._1).foldLeft(BigInt(1))(_ * _)
+
+    val pproduct = buses.map(product / _._1)
+    val reminder = buses.map { case (bus, pos) => bus - (pos % bus) }
+    val inverse = (buses zip pproduct).map { case ((bus, _), pp) => computeInverse(pp, bus) }
+
+    val sum = (pproduct zip reminder zip inverse).map { case ((pp, r), i) => pp * r * i }.sum
+
+    sum.mod(product)
   }
 
-  def gcd(i: BigInt, j: BigInt): BigInt = {
+  def computeInverse(i: BigInt, j: BigInt): BigInt = {
     @tailrec
     def loop(a: BigInt, b: BigInt, x: BigInt, y: BigInt, r: BigInt, s: BigInt): BigInt =
       if (b != 0) {
