@@ -6,7 +6,7 @@ object Day14 {
 
   sealed trait Op
   case class Mask(zero: BigInt, one: BigInt) extends Op {
-    def toValue(value: BigInt) = (value & zero) | one
+    def apply(value: BigInt) = (value & zero) | one
   }
   case class Set(position: BigInt, value: BigInt) extends Op
 
@@ -46,7 +46,7 @@ object Day14 {
   def run(program: Vector[Op]): Memory = {
     val (result, _) = program.foldLeft((Memory.empty, Mask.empty)) {
       case ((mem, _), mask: Mask) => (mem, mask)
-      case ((mem, current), Set(pos, value)) => (mem + (pos -> current.toValue(value)), current)
+      case ((mem, current), Set(pos, value)) => (mem + (pos -> current(value)), current)
     }
 
     result
@@ -64,8 +64,8 @@ object Day14Part1 extends App {
 object Day14Test extends App {
   import Day14._
 
-  assert(Mask.empty.toValue(1) == 1)
-  assert(Mask.empty.toValue(0) == 0)
+  assert(Mask.empty(1) == 1)
+  assert(Mask.empty(0) == 0)
 
   val input1 = """mask = XXXXXXXXXXXXXXXXXXXXXXXXXXXXX1XXXX0X
                  |mem[8] = 11
