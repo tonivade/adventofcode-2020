@@ -45,11 +45,8 @@ object Day14 {
 
   def run(program: Vector[Op]): Memory = {
     val (result, _) = program.foldLeft((Memory.empty, Mask.empty)) {
-      case ((mem, current), mask: Mask) => (mem, mask)
-      case ((mem, current), Set(pos, value)) => {
-        val x = current.toValue(value)
-        (mem + (pos -> x), current)
-      }
+      case ((mem, _), mask: Mask) => (mem, mask)
+      case ((mem, current), Set(pos, value)) => (mem + (pos -> current.toValue(value)), current)
     }
 
     result
