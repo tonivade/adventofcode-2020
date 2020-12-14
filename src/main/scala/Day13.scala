@@ -22,7 +22,7 @@ object Day13 {
   def search2(buses: Seq[(Int, Int)], m: BigInt = 1): BigInt = {
     val x = buses.head._1 * m
     
-    val a = buses.tail.map(t => (x + t._2) % t._1).toVector
+    val a = buses.tail.map { case (bus, pos) => (x + pos) % bus }.toVector
 
     if (a.forall(_ == 0)) 
       x
@@ -87,6 +87,13 @@ object Day13Test extends App {
   assert(busId * min == 295)
 
   val busesWithPosition = parseBusesWithPosition(input1)
+
+  assert(search2(busesWithPosition) == 1068781)
+  assert(search2(parseBusesWithPosition("17,x,13,19")) == 3417)
+  assert(search2(parseBusesWithPosition("67,7,59,61")) == 754018)
+  assert(search2(parseBusesWithPosition("67,x,7,59,61")) == 779210)
+  assert(search2(parseBusesWithPosition("67,7,x,59,61")) == 1261476)
+  assert(search2(parseBusesWithPosition("1789,37,47,1889")) == 1202161486)
 
   assert(search3(busesWithPosition) == 1068781)
   assert(search3(parseBusesWithPosition("17,x,13,19")) == 3417)
