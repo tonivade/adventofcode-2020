@@ -38,24 +38,12 @@ object Day13 {
       case (bus, pos) => {
         val pproduct = product / bus
         val remainder = bus - (pos % bus)
-        val gdc = gcd(pproduct, bus)
+        val gdc = pproduct modInverse bus
         pproduct * remainder * gdc
       }
     }
 
-    gdcs.sum.mod(product)
-  }
-
-  def gcd(i: BigInt, j: BigInt): BigInt = {
-    @tailrec
-    def loop(a: BigInt, b: BigInt, x: BigInt, y: BigInt, r: BigInt, s: BigInt): BigInt =
-      if (b != 0) {
-        val q = a / b
-
-        loop(b, a % b, r, s, x - q * r, y - q * s)
-      } else x
-
-    loop(i, j, 1, 0, 0, 1)
+    gdcs.sum mod product
   }
 }
 
