@@ -34,16 +34,19 @@ object Day13 {
   def search3(buses: Seq[(Int, Int)]): BigInt = {
     val product = buses.map(_._1).foldLeft(BigInt(1))(_ * _)
 
-    val pproduct = buses.map(product / _._1)
-    val reminder = buses.map { case (bus, pos) => bus - (pos % bus) }
-    val inverse = (buses zip pproduct).map { case ((bus, _), pp) => computeInverse(pp, bus) }
+    val gdcs = buses.map {
+      case (bus, pos) => {
+        val pproduct = product / bus
+        val remainder = bus - (pos % bus)
+        val gdc = gcd(pproduct, bus)
+        pproduct * remainder * gdc
+      }
+    }
 
-    val sum = (pproduct zip reminder zip inverse).map { case ((pp, r), i) => pp * r * i }.sum
-
-    sum.mod(product)
+    gdcs.sum.mod(product)
   }
 
-  def computeInverse(i: BigInt, j: BigInt): BigInt = {
+  def gcd(i: BigInt, j: BigInt): BigInt = {
     @tailrec
     def loop(a: BigInt, b: BigInt, x: BigInt, y: BigInt, r: BigInt, s: BigInt): BigInt =
       if (b != 0) {
