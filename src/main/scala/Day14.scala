@@ -22,13 +22,10 @@ object Day14 {
 
   def parseMask(mask: String): Mask = {
     val (zero, one) = mask.foldLeft(("", "")) {
-      case ((zeros, ones), x) => {
-        x match {
-          case '0' => (zeros + '0', ones + '0')
-          case '1' => (zeros + '1', ones + '1')
-          case 'X' => (zeros + '1', ones + '0')
-        }
-      }
+      case ((zeros, ones), '0') => (zeros + '0', ones + '0')
+      case ((zeros, ones), '1') => (zeros + '1', ones + '1')
+      case ((zeros, ones), 'X') => (zeros + '1', ones + '0')
+      case _ => throw new IllegalArgumentException(s"invalid mask $mask")
     }
     Mask(BigInt(zero, 2), BigInt(one, 2))
   }
