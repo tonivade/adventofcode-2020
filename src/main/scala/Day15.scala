@@ -1,27 +1,31 @@
 package adventofcode
 
+import scala.annotation.tailrec
+
 object Day15 {
 
-  def spoke(initial: Int*): Stream[(Map[Int, Int], Int, Int)] = {
-    val ilist = List(initial:_*)
-    val imap = List(initial:_*).zipWithIndex.map { case (v, i) => (v, i + 1) }.toMap
+  def spoke(limit: Int)(initial: Seq[Int]): (Map[Int, Int], Int, Int) = {
 
-    val state = (imap, ilist.last, ilist.size)
+    @tailrec
+    def loop(map: Map[Int, Int], last: Int, current: Int): (Map[Int, Int], Int, Int) = {
+      
+      if (current % 100000 == 0) println(current)
 
-    Stream.iterate(state) { 
-      case(map, last, current) => {
-        if (current % 10000 == 0) println(current)
-        if (map.contains(last)) {
-          val spoken = current - map(last)
-          (map + (last -> current), spoken, current + 1)
-        } else
-          (map + (last -> current), 0, current + 1)
-      }
+      if (current == limit) 
+        (map, last, current)
+      else if (map.contains(last)) {
+        val spoken = current - map(last)
+        loop(map + (last -> current), spoken, current + 1)
+      } else
+        loop(map + (last -> current), 0, current + 1)
     }
+    
+    val state = initial.zipWithIndex.map { case (v, i) => (v, i + 1) }.toMap
+
+    loop(state, initial.last, initial.size)
   }
 
-  def game(nth: Int)(initial: Int*): Int =
-    spoke(initial:_*).dropWhile { case (_, _, pos) => pos < nth}.take(1).head._2
+  def game(nth: Int)(initial: Int*): Int = spoke(nth)(initial)._2
 }
 
 object Day15Part1 extends App {
@@ -47,7 +51,7 @@ object Day15Test extends App {
   assert(game(2020)(3, 2, 1) == 438)
   assert(game(2020)(3, 1, 2) == 1836)
   
-//  assert(game(30000000)(0, 3, 6) == 175594)
+  assert(game(30000000)(0, 3, 6) == 175594)
 
   println("OK")
 }
