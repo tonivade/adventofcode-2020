@@ -10,6 +10,7 @@ object Day15 {
 
     Stream.iterate(state) { 
       case(map, last, current) => {
+        if (current % 10000 == 0) println(current)
         if (map.contains(last)) {
           val spoken = current - map(last)
           (map + (last -> current), spoken, current + 1)
@@ -18,24 +19,35 @@ object Day15 {
       }
     }
   }
+
+  def game(nth: Int)(initial: Int*): Int =
+    spoke(initial:_*).dropWhile { case (_, _, pos) => pos < nth}.take(1).head._2
 }
 
 object Day15Part1 extends App {
   import Day15._
 
-  println(spoke(11,0,1,10,5,19).take(2020 - 5).last._2)
+  println(game(2020)(11,0,1,10,5,19))
+}
+
+object Day15Part2 extends App {
+  import Day15._
+
+  println(game(30000000)(11,0,1,10,5,19))
 }
 
 object Day15Test extends App {
   import Day15._
 
-  assert(spoke(0, 3, 6).take(2018).last._2 == 436)
-  assert(spoke(1, 3, 2).take(2018).last._2 == 1)
-  assert(spoke(2, 1, 3).take(2018).last._2 == 10)
-  assert(spoke(1, 2, 3).take(2018).last._2 == 27)
-  assert(spoke(2, 3, 1).take(2018).last._2 == 78)
-  assert(spoke(3, 2, 1).take(2018).last._2 == 438)
-  assert(spoke(3, 1, 2).take(2018).last._2 == 1836)
+  assert(game(2020)(0, 3, 6) == 436)
+  assert(game(2020)(1, 3, 2) == 1)
+  assert(game(2020)(2, 1, 3) == 10)
+  assert(game(2020)(1, 2, 3) == 27)
+  assert(game(2020)(2, 3, 1) == 78)
+  assert(game(2020)(3, 2, 1) == 438)
+  assert(game(2020)(3, 1, 2) == 1836)
+  
+//  assert(game(30000000)(0, 3, 6) == 175594)
 
   println("OK")
 }
