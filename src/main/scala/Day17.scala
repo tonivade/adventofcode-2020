@@ -61,7 +61,7 @@ object Day17 {
   object Layer {
     def empty(minX: Int, maxX: Int, minY: Int, maxY: Int): Layer = {
       val a: ((Int, Int), Cube) = ((0, 0), Inactive)
-      val b: ((Int, Int), Cube) = (((maxX), 0), Inactive)
+      val b: ((Int, Int), Cube) = ((maxX, 0), Inactive)
       val c: ((Int, Int), Cube) = ((0, maxY), Inactive)
       val d: ((Int, Int), Cube) = ((maxX, maxY), Inactive)
 
@@ -167,7 +167,7 @@ object Day17Part1 extends App {
 
   val input = Source.fromResource("space.txt").mkString
 
-  val grid = Grid(Map(0 -> Layer(parseLayer(input))))
+  val grid = Grid(Map(0 -> Layer(parseLayer(input)).pad))
 
   println(grid.mkString)
 
