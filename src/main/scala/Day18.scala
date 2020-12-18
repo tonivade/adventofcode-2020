@@ -42,6 +42,31 @@ object Day18 {
     (out ++ op).mkString(" ")
   }
 
+  def toRPN2(input: String): String = {
+    val split = input.split(' ').flatMap(_.toCharArray()).reverse
+
+    val (out, op) = split.foldLeft((ListBuffer.empty[Char], Stack.empty[Char])) {
+      case ((output, operator), current) if current.isDigit => ((output :+ current), operator)
+      case ((output, operator), '+') => (output, operator.push('+'))
+      case ((output, operator), '*') => {
+        while (!operator.isEmpty && operator.top == '+') {
+          output += operator.pop
+        }
+        (output, operator.push('*'))
+      }
+      case ((output, operator), ')') => (output, operator.push('('))
+      case ((output, operator), '(') => {
+        while (operator.top != '(') {
+          output += operator.pop
+        }
+        operator.pop
+        (output, operator)
+      }
+    }
+
+    (out ++ op).mkString(" ")
+  }
+
   def parse(input: String): Expr = {
     val split = input.split(' ').map(_.charAt(0))
 
@@ -59,6 +84,14 @@ object Day18Part1 extends App {
   import Day18._
 
   val input = Source.fromResource("homework.txt").getLines().map(toRPN).map(parse)
+
+  println(input.map(_.eval).foldLeft(BigInt(0))(_ + _))
+}
+
+object Day18Part2 extends App {
+  import Day18._
+
+  val input = Source.fromResource("homework.txt").getLines().map(toRPN2).map(parse)
 
   println(input.map(_.eval).foldLeft(BigInt(0))(_ + _))
 }
@@ -94,6 +127,11 @@ object Day18Test extends App {
   assert(y5.eval == 51)
   assert(parse("1 2 3 * + 4 5 6 + * +").eval == 51)
   assert(parse("1 2 3 * 4 5 6 + * + +").eval == 51)
+  
+  assert(parse(toRPN2("1 + 2 * 3 + 4 * 5 + 6")).eval == 231)
+  assert(parse(toRPN2("((((1 + 2) * 3) + 4) * 5) + 6")).eval == 71)
+  assert(parse(toRPN2("1 + (2 * 3) + (4 * (5 + 6))")).eval == 51)
+  assert(parse(toRPN2("(1 + 2 * 3) + (4 * (5 + 6))")).eval == 53)
 
   println("OK")
 }
