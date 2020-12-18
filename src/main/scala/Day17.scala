@@ -293,7 +293,6 @@ object Day17Part1 extends App {
   println(step(6)(grid).active)
 }
 
-
 object Day17Part2 extends App {
   import Day17._
 
@@ -321,7 +320,6 @@ object Day17Test extends App {
   assert(layer0.getCube(1,0) == Active)
   assert(layer0.getCube(2,0) == Inactive)
   
-  println(layer0.pad.mkString)
   val grid = Grid(Map(0 -> layer0.pad))
   assert(grid.getCube(1,1,0) == Inactive)
   assert(grid.getCube(2,1,0) == Active)
@@ -359,7 +357,6 @@ object Day17Test2 extends App {
                 |###""".stripMargin
 
   val layer0 = Layer(parseLayer(input))
-  
   val grid = Grid(Map(0 -> layer0.pad))
   val hypergrid = HyperGrid(Map(0 -> grid))
 
