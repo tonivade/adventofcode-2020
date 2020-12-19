@@ -6,7 +6,7 @@ import scala.io.Source
 object Day19 {
 
   sealed trait Rule {
-    def applyTo(line: String): (Int, Boolean)
+    def applyTo(line: String): Option[Int]
   }
 
   case class Rules(map: Map[Int, Rule]) {
@@ -15,21 +15,24 @@ object Day19 {
     def applyTo(line: String): List[Int] = 
       map.map { 
         case (pos, rule) => 
-          val (consumed, result) = rule.applyTo(line)
-          (pos, consumed == line.size && result) 
-      }.filter(_._2).map(_._1).toList
+          rule.applyTo(line) match {
+            case Some(a) if a == line.size => Some(pos)
+            case _ => None
+          }
+      }.flatMap(_.toList).toList
 
     def applyTo(num: Int)(line: String): Boolean = {
       val rule = map(num)
 
-      val (consume, result) = rule.applyTo(line)
-      
-      consume == line.size && result
+      rule.applyTo(line) match {
+        case Some(a) if a == line.size => true
+        case _ => false
+      }
     }
   }
 
   class LazyRule(rule: => Rule) extends Rule {
-    override def applyTo(line: String): (Int, Boolean) = rule.applyTo(line)
+    override def applyTo(line: String): Option[Int] = rule.applyTo(line)
   }
 
   object LazyRule {
@@ -37,39 +40,35 @@ object Day19 {
   }
 
   case class OrRule(left: Rule, right: Rule) extends Rule {
-    override def applyTo(line: String): (Int, Boolean) = {
-      val (consumedLeft, resultLeft) = left.applyTo(line)
-
-      if (resultLeft)
-        (consumedLeft, true)
-      else {
-        val (consumedRight, resultRight) = right.applyTo(line)
-        if (resultRight)
-          (consumedRight, true)
-        else
-          (0, false)
+    override def applyTo(line: String): Option[Int] = {
+      left.applyTo(line) match {
+        case None => right.applyTo(line) match {
+          case None => None
+          case x => x
+        }
+        case x => x
       }
     }
   }
 
   case class AndRule(left: Rule, right: Rule) extends Rule {
-    override def applyTo(line: String): (Int, Boolean) = {
-      val (consumedLeft, resultLeft) = left.applyTo(line)
-      if (resultLeft) {
-        val (consumedRight, resultRight) = right.applyTo(line.drop(consumedLeft))
-
-        (consumedLeft + consumedRight, resultRight)
-      } else 
-        (0, false)
+    override def applyTo(line: String): Option[Int] = {
+      left.applyTo(line) match {
+        case Some(a) => right.applyTo(line.drop(a)) match {
+          case Some(b) => Some(a + b)
+          case x => x
+        }
+        case x => x
+      }
     }
   }
 
   case class SimpleRule(value: Char) extends Rule {
-    override def applyTo(line: String): (Int, Boolean) = 
+    override def applyTo(line: String): Option[Int] = 
       if (line.isEmpty || line.charAt(0) != value) 
-        (0, false) 
+        None
       else 
-        (1, true)
+        Some(1)
   }
 
   def parseLine(line: String): (Int, String) = {
