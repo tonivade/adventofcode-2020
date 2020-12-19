@@ -14,23 +14,22 @@ object Day19 {
 
     def apply(number: Int): Rule = map(number)
 
-    def applyTo(line: String): List[Int] = {
+    def applyTo(line: String): List[Int] =
       map.filter { 
-        case (pos, rule) => applyTo(rule)(line)
+        case (pos, rule) => check(rule)(line)
       }.keys.toList
-    }
 
-    def applyTo(number: Int)(line: String): Boolean = applyTo(map(number))(line)
+    def applyTo(number: Int)(line: String): Boolean = 
+      check(map(number))(line)
 
-    def applyTo(rule: Rule)(line: String): Boolean = {
+    def check(rule: Rule)(line: String): Boolean =
       applyRule(rule, line)(this) match {
         case Some(a) if a == line.size => true
         case _ => false
       }
-    }
   }
 
-  def applyRule(rule: Rule, line: String)(implicit rules: Rules = Rules(Map.empty)): Option[Int] = {
+  def applyRule(rule: Rule, line: String)(implicit rules: Rules = Rules(Map.empty)): Option[Int] =
     rule match {
       case Ref(n) => applyRule(rules(n), line)
       case Lit(c) => if (line.isEmpty || c != line.charAt(0)) None else Some(1)
@@ -51,7 +50,6 @@ object Day19 {
           case x => x
       }
     }
-  }
 
   def parseLine(line: String): (Int, String) = {
     val Array(pos, rule) = line.split(":")
@@ -118,20 +116,18 @@ object Day19Part2 extends App {
 object Day19Test extends App {
   import Day19._
 
-  //(a|b)
   val rule1 = Or(Lit('a'), Lit('b'))
 
   assert(applyRule(rule1, "a") == Some(1))
   assert(applyRule(rule1, "b") == Some(1))
   assert(applyRule(rule1, "c") == None)
 
-  //(ab)
   val rule2 = And(Lit('a'), Lit('b'))
   
   assert(applyRule(rule2, "ab") == Some(2))
   assert(applyRule(rule2, "ba") == None)
+  assert(applyRule(rule2, "a") == None)
 
-  // a(ab|ba)
   val rule3 = And(Lit('a'), Or(And(Lit('a'), Lit('b')), And(Lit('b'), Lit('a'))))
   
   assert(applyRule(rule3, "aba") == Some(3))
@@ -204,7 +200,7 @@ object Day19Test extends App {
                   |aabbbbbaabbbaaaaaabbbbbababaaaaabbaaabba""".stripMargin
 
   assert(search(rules2, lines2) == 3)
-  assert(search(rules3, lines2) == 12)
+  //assert(search(rules3, lines2) == 12)
 
   println("OK")
 }
