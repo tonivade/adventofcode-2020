@@ -9,12 +9,8 @@ object Day19 {
     def applyTo(line: String): Option[Int]
   }
 
-  class LazyRule(rule: => Rule) extends Rule {
-    override def applyTo(line: String): Option[Int] = rule.applyTo(line)
-  }
-
-  object LazyRule {
-    def apply(rule: => Rule): LazyRule = new LazyRule(rule)
+  case class Ref(number: Int)(map: Map[Int, Rule]) extends Rule {
+    override def applyTo(line: String): Option[Int] = map(number).applyTo(line)
   }
 
   case class OrRule(left: Rule, right: Rule) extends Rule {
@@ -51,7 +47,7 @@ object Day19 {
 
   case class Rules(map: Map[Int, Rule]) {
 
-    def apply(number: Int): Rule = LazyRule(map(number))
+    def apply(number: Int): Rule = Ref(number)(map)
 
     def applyTo(line: String): List[Int] = 
       map.map { 
@@ -100,7 +96,7 @@ object Day19 {
       case refOrRegex(a, b, c) => 
         OrRule(
           rules(a.toInt), 
-          AndRule(rules(b.toInt), rules(b.toInt)))
+          AndRule(rules(b.toInt), rules(c.toInt)))
       case refRegex(a) => rules(a.toInt)
       case andOrAndAndRuleRegex(a, b, c, d, e) => 
         OrRule(
@@ -137,6 +133,9 @@ object Day19Part2 extends App {
   val fixedInput = input + (8 -> "42 | 42 8") + (11 -> "42 31 | 42 11 31")
 
   val rules: Rules = Rules(fixedInput.mapValues(parseRule(rules)).toMap)
+
+  println(rules.map(8))
+  println(rules.map(11))
 
   println(search(rules, linesPart))
 }
