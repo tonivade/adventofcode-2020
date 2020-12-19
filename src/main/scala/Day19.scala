@@ -1,69 +1,54 @@
 package adventofcode
 
-import adventofcode.Day19.OrRule
 import scala.io.Source
 
 object Day19 {
 
-  sealed trait Rule {
-    def applyTo(line: String): Option[Int]
-  }
-
-  case class Ref(number: Int)(map: Map[Int, Rule]) extends Rule {
-    override def applyTo(line: String): Option[Int] = map(number).applyTo(line)
-  }
-
-  case class OrRule(left: Rule, right: Rule) extends Rule {
-    override def applyTo(line: String): Option[Int] = {
-      left.applyTo(line) match {
-        case None => right.applyTo(line) match {
-          case None => None
-          case x => x
-        }
-        case x => x
-      }
-    }
-  }
-
-  case class AndRule(left: Rule, right: Rule) extends Rule {
-    override def applyTo(line: String): Option[Int] = {
-      left.applyTo(line) match {
-        case Some(a) => right.applyTo(line.drop(a)) match {
-          case Some(b) => Some(a + b)
-          case x => x
-        }
-        case x => x
-      }
-    }
-  }
-
-  case class SimpleRule(value: Char) extends Rule {
-    override def applyTo(line: String): Option[Int] = 
-      if (line.isEmpty || line.charAt(0) != value) 
-        None
-      else 
-        Some(1)
-  }
+  sealed trait Rule 
+  case class Ref(number: Int) extends Rule 
+  case class Or(left: Rule, right: Rule) extends Rule
+  case class And(left: Rule, right: Rule) extends Rule
+  case class Lit(value: Char) extends Rule
 
   case class Rules(map: Map[Int, Rule]) {
 
-    def apply(number: Int): Rule = Ref(number)(map)
+    def apply(number: Int): Rule = map(number)
 
-    def applyTo(line: String): List[Int] = 
-      map.map { 
-        case (pos, rule) => 
-          rule.applyTo(line) match {
-            case Some(a) if a == line.size => Some(pos)
-            case _ => None
-          }
-      }.flatMap(_.toList).toList
+    def applyTo(line: String): List[Int] = {
+      map.filter { 
+        case (pos, rule) => applyTo(rule)(line)
+      }.keys.toList
+    }
 
-    def applyTo(num: Int)(line: String): Boolean = {
-      val rule = map(num)
+    def applyTo(number: Int)(line: String): Boolean = applyTo(map(number))(line)
 
-      rule.applyTo(line) match {
+    def applyTo(rule: Rule)(line: String): Boolean = {
+      applyRule(rule, line)(this) match {
         case Some(a) if a == line.size => true
         case _ => false
+      }
+    }
+  }
+
+  def applyRule(rule: Rule, line: String)(implicit rules: Rules = Rules(Map.empty)): Option[Int] = {
+    rule match {
+      case Ref(n) => applyRule(rules(n), line)
+      case Lit(c) => if (line.isEmpty || c != line.charAt(0)) None else Some(1)
+      case And(left, right) => 
+        applyRule(left, line) match {
+          case Some(a) => applyRule(right, line.drop(a)) match {
+            case Some(b) => Some(a + b)
+            case x => x
+          }
+          case x => x
+        }
+      case Or(left, right) => 
+        applyRule(left, line) match {
+          case None => applyRule(right, line) match {
+            case None => None
+            case x => x
+          }
+          case x => x
       }
     }
   }
@@ -74,54 +59,46 @@ object Day19 {
     (pos.toInt, rule.trim())
   }
 
-  def parseRule(rules: => Rules)(line: String): Rule = {
+  def parseRule(line: String): Rule = {
     val simpleRuleRegex = """"(\w)"""".r
     val refRegex = """(\d+)""".r
-    val refOrRegex = """(\d+) \| (\d+) (\d+)""".r
     val andRuleRegex = """(\d+) (\d+)""".r
     val orRuleRegex = """(\d+) \| (\d+)""".r
     val andOrAndRuleRegex = """(\d+) (\d+) \| (\d+) (\d+)""".r
-    val andOrAndAndRuleRegex = """(\d+) (\d+) \| (\d+) (\d+) (\d+)""".r
 
     val result = line match {
-      case simpleRuleRegex(value) => SimpleRule(value.charAt(0))
+      case simpleRuleRegex(value) => Lit(value.charAt(0))
       case andRuleRegex(a, b) => 
-        AndRule(rules(a.toInt), rules(b.toInt))
+        And(Ref(a.toInt), Ref(b.toInt))
       case orRuleRegex(a, b) => 
-        OrRule(rules(a.toInt), rules(b.toInt))
+        Or(Ref(a.toInt), Ref(b.toInt))
       case andOrAndRuleRegex(a, b, c, d) => 
-        OrRule(
-          AndRule(rules(a.toInt), rules(b.toInt)), 
-          AndRule(rules(c.toInt), rules(d.toInt)))
-      case refOrRegex(a, b, c) => 
-        OrRule(
-          rules(a.toInt), 
-          AndRule(rules(b.toInt), rules(c.toInt)))
-      case refRegex(a) => rules(a.toInt)
-      case andOrAndAndRuleRegex(a, b, c, d, e) => 
-        OrRule(
-          AndRule(rules(a.toInt), rules(b.toInt)), 
-          AndRule(rules(c.toInt), 
-            AndRule(rules(d.toInt), rules(e.toInt))))
+        Or(
+          And(Ref(a.toInt), Ref(b.toInt)), 
+          And(Ref(c.toInt), Ref(d.toInt)))
+      case refRegex(a) => Ref(a.toInt)
       case _ => throw new IllegalArgumentException(s"`$line`")
     }
 
     result
   }
 
-  def parse(input: String): Map[Int, String] =
-    input.linesIterator.map(parseLine).toMap
+  def parseRules(input: String): Rules =
+    Rules(input.linesIterator.map(parseLine).toMap.mapValues(parseRule))
 
   def search(rules: Rules, lines: String): Int =
     lines.linesIterator.filter(rules.applyTo(0)).size
 
   val Array(rulesPart, linesPart) = Source.fromResource("rules.txt").mkString.split("\\n\\n")
+
+  val fix8 = Or(Ref(42), And(Ref(42), Ref(8)))
+  val fix11 = Or(And(Ref(42), Ref(31)), And(Ref(42), And(Ref(11), Ref(31))))
 }
 
 object Day19Part1 extends App {
   import Day19._
 
-  val rules: Rules = Rules(parse(rulesPart).mapValues(parseRule(rules)).toMap)
+  val rules = parseRules(rulesPart)
 
   println(search(rules, linesPart))
 }
@@ -129,49 +106,46 @@ object Day19Part1 extends App {
 object Day19Part2 extends App {
   import Day19._
 
-  val input = parse(rulesPart)
-  val fixedInput = input + (8 -> "42 | 42 8") + (11 -> "42 31 | 42 11 31")
+  val rules = parseRules(rulesPart)
+  val fixed = Rules(rules.map + (8 -> fix8) + (11 -> fix11))
 
-  val rules: Rules = Rules(fixedInput.mapValues(parseRule(rules)).toMap)
+  println(fixed.map(8))
+  println(fixed.map(11))
 
-  println(rules.map(8))
-  println(rules.map(11))
-
-  println(search(rules, linesPart))
+  println(search(fixed, linesPart))
 }
 
 object Day19Test extends App {
   import Day19._
 
-  val rule1 = OrRule(SimpleRule('a'), SimpleRule('b'))
+  //(a|b)
+  val rule1 = Or(Lit('a'), Lit('b'))
 
-  assert(rule1.applyTo("a") == Some(1))
-  assert(rule1.applyTo("b") == Some(1))
-  assert(rule1.applyTo("c") == None)
-  
-  val rule2 = AndRule(SimpleRule('a'), SimpleRule('b'))
-  
-  assert(rule2.applyTo("ab") == Some(2))
-  assert(rule2.applyTo("ba") == None)
+  assert(applyRule(rule1, "a") == Some(1))
+  assert(applyRule(rule1, "b") == Some(1))
+  assert(applyRule(rule1, "c") == None)
 
-  val rule3 = AndRule(
-    SimpleRule('a'), 
-    OrRule(
-      AndRule(SimpleRule('a'), SimpleRule('b')),
-      AndRule(SimpleRule('b'), SimpleRule('a'))))
+  //(ab)
+  val rule2 = And(Lit('a'), Lit('b'))
   
-  assert(rule3.applyTo("aba") == Some(3))
-  assert(rule3.applyTo("aab") == Some(3))
-  assert(rule3.applyTo("aa") == None)
-  assert(rule3.applyTo("ab") == None)
-  assert(rule3.applyTo("ba") == None)
+  assert(applyRule(rule2, "ab") == Some(2))
+  assert(applyRule(rule2, "ba") == None)
+
+  // a(ab|ba)
+  val rule3 = And(Lit('a'), Or(And(Lit('a'), Lit('b')), And(Lit('b'), Lit('a'))))
+  
+  assert(applyRule(rule3, "aba") == Some(3))
+  assert(applyRule(rule3, "aab") == Some(3))
+  assert(applyRule(rule3, "aa") == None)
+  assert(applyRule(rule3, "ab") == None)
+  assert(applyRule(rule3, "ba") == None)
     
   val input1 = """0: 1 2
                 |1: "a"
                 |2: 1 3 | 3 1
                 |3: "b"""".stripMargin
 
-  val rules1: Rules = Rules(parse(input1).mapValues(parseRule(rules1)).toMap)
+  val rules1: Rules = parseRules(input1)
 
   assert(rules1.applyTo("aab") == List(0))
   assert(rules1.applyTo("aba") == List(0))
@@ -210,9 +184,8 @@ object Day19Test extends App {
                   |7: 14 5 | 1 21
                   |24: 14 1""".stripMargin
   
-  val fixed = parse(input2) + (8 -> "42 | 42 8") + (11 -> "42 31 | 42 11 31")
-  val rules2: Rules = Rules(parse(input2).mapValues(parseRule(rules2)).toMap)
-  val rules3: Rules = Rules(fixed.mapValues(parseRule(rules3)).toMap)
+  val rules2 = parseRules(input2)
+  val rules3 = Rules(rules2.map + (8 -> fix8) + (11 -> fix11))
 
   val lines2 = """abbbbbabbbaaaababbaabbbbabababbbabbbbbbabaaaa
                   |bbabbbbaabaabba
