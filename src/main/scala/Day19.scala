@@ -2,13 +2,14 @@ package adventofcode
 
 import scala.io.Source
 import scala.collection.immutable.Stream.cons
+import scala.collection.mutable.HashSet
+import scala.collection.mutable.ListBuffer
 
 object Day19 {
 
   sealed trait Rule 
   case class Ref(number: Int) extends Rule 
   case class Or(left: Rule, right: Rule) extends Rule
-  case class Ex(left: Rule, right: Rule) extends Rule
   case class And(left: Rule, right: Rule) extends Rule
   case class Lit(value: Char) extends Rule
 
@@ -46,14 +47,6 @@ object Day19 {
       case Or(left, right) => 
         applyRule(left, line) match {
           case None => applyRule(right, line)
-          case a => a
-        }
-      case Ex(left, right) =>
-        applyRule(left, line) match {
-          case Some(a) => applyRule(right, line) match {
-            case None => Some(a)
-            case b => b
-          }
           case a => a
         }
     }
@@ -96,8 +89,54 @@ object Day19 {
 
   val Array(rulesPart, linesPart) = Source.fromResource("rules.txt").mkString.split("\\n\\n")
 
-  val fix8 = Ex(Ref(42), And(Ref(42), Ref(8)))
-  val fix11 = Ex(And(Ref(42), Ref(31)), And(Ref(42), And(Ref(11), Ref(31))))
+  def applyRule42(rules: Rules, line: String, consumed: Int = 0, seq: List[Int] = List.empty): Option[(Int, List[Int])] =
+    applyRule(rules(42), line)(rules) match {
+      case Some(a) => applyRule42(rules, line.drop(a), consumed + a, seq :+ 42)
+      case None => if (consumed > 0) Some(consumed, seq) else None
+    }
+
+  def applyRule31(rules: Rules, line: String, consumed: Int = 0, seq: List[Int] = List.empty): Option[(Int, List[Int])] =
+    applyRule(rules(31), line)(rules) match {
+      case Some(a) => applyRule31(rules, line.drop(a), consumed + a, seq :+ 31)
+      case None => if (consumed > 0) Some(consumed, seq) else None
+    }
+
+  def apply42n31(rules: Rules, line: String, consumed: Int = 0, seq: List[Int] = List.empty): Option[(Int, List[Int])] = {
+    val x = applyRule42(rules, line) match {
+      case None => None
+      case Some((a, s)) => applyRule31(rules, line.drop(a), a, s)
+    }
+
+    x match {
+      case Some((a, s)) => apply42n31(rules, line.drop(a), consumed + a, seq ++ s)
+      case None => if (consumed > 0) Some(consumed, seq) else None
+    }
+  }
+
+  /*
+   * applied a plan B
+   * the result should be a sequence of 42 and 31
+   * - it should start by pair of 42
+   * - it should end by a 31
+   * - it should be more 42 than 31 overall
+   * - and in the rest of the elements:
+   *  - if it have at least a 31 it should end with a 31 
+   */
+  def search2(rules: Rules, lines: String): Int = {
+    val all = lines.linesIterator.map { line =>
+      apply42n31(rules, line) match {
+        case Some((a, seq)) if a == line.size => 
+          val res1 = seq.last == 31 && seq.head == 42 && seq.tail.head == 42 && seq.count(_ == 42) > seq.count(_ == 31)
+          val inner = seq.tail.tail.dropRight(1)
+          val res2 = inner.count(_ == 31) > 0 && inner.last != 31
+          res1 && !res2
+        case Some((a, seq)) => false
+        case _ => false
+      }
+    }
+
+    all.count(_ == true)
+  }
 }
 
 object Day19Part1 extends App {
@@ -111,59 +150,9 @@ object Day19Part1 extends App {
 object Day19Part2 extends App {
   import Day19._
 
-  def applyRule42(rules: Rules, line: String, consumed: Int = 0): Option[Int] =
-    applyRule(rules(42), line)(rules) match {
-      case Some(a) => applyRule42(rules, line.drop(a), consumed + a)
-      case None => if (consumed > 0) Some(consumed) else None
-    }
-
-  def applyRule31(rules: Rules, line: String, consumed: Int = 0): Option[Int] =
-    applyRule(rules(31), line)(rules) match {
-      case Some(a) => applyRule31(rules, line.drop(a), consumed + a)
-      case None => if (consumed > 0) Some(consumed) else None
-    }
-
-  def apply42n31(rules: Rules, line: String, consumed: Int = 0): Option[Int] = {
-    val x = applyRule42(rules, line) match {
-      case None => None
-      case Some(a) => applyRule31(rules, line.drop(a), a)
-    }
-
-    x match {
-      case Some(a) => apply42n31(rules, line.drop(a), consumed + a)
-      case None => if (consumed > 0) Some(consumed) else None
-    }
-  }
-
-  def planb(rules: Rules, lines: Seq[String]): Int = {
-    val z = lines.map { line =>
-      val x = apply42n31(rules, line)
-
-      /*
-      val y = x match {
-        case Some(a) => applyRule31(rules, line.drop(a))
-        case None => None
-      }
-      */
-
-      x match {
-        case Some(a) if a == line.size => true
-        case Some(a) => 
-          println("line:\t\t" + line)
-          println("match:\t\t" + line.take(a))
-          println("notmatch:\t" + " ".repeat(a) + line.drop(a))
-          println()
-          false
-        case _ => false
-      }
-    }
-
-    z.count(_ == true)
-  }
-
   val rules = parseRules(rulesPart)
 
-  println(planb(rules, linesPart.linesIterator.toSeq))
+  println(search2(rules, linesPart))
 }
 
 object Day19Test extends App {
@@ -234,7 +223,6 @@ object Day19Test extends App {
                   |24: 14 1""".stripMargin
   
   val rules2 = parseRules(input2)
-  val rules3 = Rules(rules2.map + (8 -> fix8) + (11 -> fix11))
 
   val lines2 = """abbbbbabbbaaaababbaabbbbabababbbabbbbbbabaaaa
                   |bbabbbbaabaabba
@@ -253,44 +241,7 @@ object Day19Test extends App {
                   |aabbbbbaabbbaaaaaabbbbbababaaaaabbaaabba""".stripMargin
 
   assert(search(rules2, lines2) == 3)
-  println(search(rules3, lines2))
-
-  println("OK")
-}
-
-object Day19Test2 extends App {
-  import Day19._
-
-  val rule0 = And(Ref(2), Lit('b'))
-  val rule1 = Lit('a')
-  val rule2 = Ex(Ref(1), And(Ref(1), Ref(2)))
-
-  val rules = Rules(Map(0 -> rule0, 1 -> rule1, 2 -> rule2))
-
-  assert(rules.applyTo(0)("ab"))
-  assert(rules.applyTo(0)("aaaab"))
-  assert(rules.applyTo(0)("aaaaaaaab"))
-  assert(rules.applyTo(0)("aaaaaaaaaab"))
-
-  println("OK")
-}
-
-object Day19Test3 extends App {
-  import Day19._
-
-  val rule0 = And(Ref(8), Ref(11))
-  val rule8 = Ex(Ref(42), And(Ref(42), Ref(8)))
-  val rule11 = Ex(And(Ref(42), Ref(31)), And(Ref(42), And(Ref(11), Ref(31))))
-
-  val rule42 = Lit('a')
-  val rule31 = Lit('b')
-
-  val rules = Rules(Map(0 -> rule0, 8 -> rule8, 11 -> rule11, 42 -> rule42, 31 -> rule31))
-
-  assert(rules.applyTo(0)("ab"))
-  assert(rules.applyTo(0)("aaaab"))
-  assert(rules.applyTo(0)("aaaaaaaab"))
-  assert(rules.applyTo(0)("aaaaaaaaaab"))
+  assert(search2(rules2, lines2) == 12)
 
   println("OK")
 }
