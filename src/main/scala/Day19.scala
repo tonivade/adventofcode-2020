@@ -1,12 +1,14 @@
 package adventofcode
 
 import scala.io.Source
+import scala.collection.immutable.Stream.cons
 
 object Day19 {
 
   sealed trait Rule 
   case class Ref(number: Int) extends Rule 
   case class Or(left: Rule, right: Rule) extends Rule
+  case class Ex(left: Rule, right: Rule) extends Rule
   case class And(left: Rule, right: Rule) extends Rule
   case class Lit(value: Char) extends Rule
 
@@ -37,18 +39,23 @@ object Day19 {
         applyRule(left, line) match {
           case Some(a) => applyRule(right, line.drop(a)) match {
             case Some(b) => Some(a + b)
-            case x => x
+            case b => b
           }
-          case x => x
+          case a => a
         }
       case Or(left, right) => 
         applyRule(left, line) match {
-          case None => applyRule(right, line) match {
-            case None => None
-            case x => x
+          case None => applyRule(right, line)
+          case a => a
+        }
+      case Ex(left, right) =>
+        applyRule(left, line) match {
+          case Some(a) => applyRule(right, line) match {
+            case None => Some(a)
+            case b => b
           }
-          case x => x
-      }
+          case a => a
+        }
     }
 
   def parseLine(line: String): (Int, String) = {
@@ -89,8 +96,8 @@ object Day19 {
 
   val Array(rulesPart, linesPart) = Source.fromResource("rules.txt").mkString.split("\\n\\n")
 
-  val fix8 = Or(Ref(42), And(Ref(42), Ref(8)))
-  val fix11 = Or(And(Ref(42), Ref(31)), And(Ref(42), And(Ref(11), Ref(31))))
+  val fix8 = Ex(Ref(42), And(Ref(42), Ref(8)))
+  val fix11 = Ex(And(Ref(42), Ref(31)), And(Ref(42), And(Ref(11), Ref(31))))
 }
 
 object Day19Part1 extends App {
@@ -104,13 +111,59 @@ object Day19Part1 extends App {
 object Day19Part2 extends App {
   import Day19._
 
+  def applyRule42(rules: Rules, line: String, consumed: Int = 0): Option[Int] =
+    applyRule(rules(42), line)(rules) match {
+      case Some(a) => applyRule42(rules, line.drop(a), consumed + a)
+      case None => if (consumed > 0) Some(consumed) else None
+    }
+
+  def applyRule31(rules: Rules, line: String, consumed: Int = 0): Option[Int] =
+    applyRule(rules(31), line)(rules) match {
+      case Some(a) => applyRule31(rules, line.drop(a), consumed + a)
+      case None => if (consumed > 0) Some(consumed) else None
+    }
+
+  def apply42n31(rules: Rules, line: String, consumed: Int = 0): Option[Int] = {
+    val x = applyRule42(rules, line) match {
+      case None => None
+      case Some(a) => applyRule31(rules, line.drop(a), a)
+    }
+
+    x match {
+      case Some(a) => apply42n31(rules, line.drop(a), consumed + a)
+      case None => if (consumed > 0) Some(consumed) else None
+    }
+  }
+
+  def planb(rules: Rules, lines: Seq[String]): Int = {
+    val z = lines.map { line =>
+      val x = apply42n31(rules, line)
+
+      /*
+      val y = x match {
+        case Some(a) => applyRule31(rules, line.drop(a))
+        case None => None
+      }
+      */
+
+      x match {
+        case Some(a) if a == line.size => true
+        case Some(a) => 
+          println("line:\t\t" + line)
+          println("match:\t\t" + line.take(a))
+          println("notmatch:\t" + " ".repeat(a) + line.drop(a))
+          println()
+          false
+        case _ => false
+      }
+    }
+
+    z.count(_ == true)
+  }
+
   val rules = parseRules(rulesPart)
-  val fixed = Rules(rules.map + (8 -> fix8) + (11 -> fix11))
 
-  println(fixed.map(8))
-  println(fixed.map(11))
-
-  println(search(fixed, linesPart))
+  println(planb(rules, linesPart.linesIterator.toSeq))
 }
 
 object Day19Test extends App {
@@ -200,7 +253,44 @@ object Day19Test extends App {
                   |aabbbbbaabbbaaaaaabbbbbababaaaaabbaaabba""".stripMargin
 
   assert(search(rules2, lines2) == 3)
-  //assert(search(rules3, lines2) == 12)
+  println(search(rules3, lines2))
+
+  println("OK")
+}
+
+object Day19Test2 extends App {
+  import Day19._
+
+  val rule0 = And(Ref(2), Lit('b'))
+  val rule1 = Lit('a')
+  val rule2 = Ex(Ref(1), And(Ref(1), Ref(2)))
+
+  val rules = Rules(Map(0 -> rule0, 1 -> rule1, 2 -> rule2))
+
+  assert(rules.applyTo(0)("ab"))
+  assert(rules.applyTo(0)("aaaab"))
+  assert(rules.applyTo(0)("aaaaaaaab"))
+  assert(rules.applyTo(0)("aaaaaaaaaab"))
+
+  println("OK")
+}
+
+object Day19Test3 extends App {
+  import Day19._
+
+  val rule0 = And(Ref(8), Ref(11))
+  val rule8 = Ex(Ref(42), And(Ref(42), Ref(8)))
+  val rule11 = Ex(And(Ref(42), Ref(31)), And(Ref(42), And(Ref(11), Ref(31))))
+
+  val rule42 = Lit('a')
+  val rule31 = Lit('b')
+
+  val rules = Rules(Map(0 -> rule0, 8 -> rule8, 11 -> rule11, 42 -> rule42, 31 -> rule31))
+
+  assert(rules.applyTo(0)("ab"))
+  assert(rules.applyTo(0)("aaaab"))
+  assert(rules.applyTo(0)("aaaaaaaab"))
+  assert(rules.applyTo(0)("aaaaaaaaaab"))
 
   println("OK")
 }
