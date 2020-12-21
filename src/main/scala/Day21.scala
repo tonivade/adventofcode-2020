@@ -28,17 +28,14 @@ object Day21 {
     val maxP = mergedP.mapValues(_.maxBy(_._2)._2)
 
     mergedP.map { 
-      case (a, ingrs) => (a, ingrs.filter { case (i, v) => v == maxP(a) }.map(_._1).toList) 
+      case (a, ingrs) => (a, ingrs.filter(_._2 == maxP(a)).map(_._1).toList) 
     }
   }
 
   def calculateAllergens(probable: Map[String, List[String]]): Set[String] =
-    probable.values.foldLeft(Set.empty[String]) {
-      case (state, current) =>
-        state ++ current
-    }
+    probable.values.foldLeft(Set.empty[String])(_ ++ _)
 
-  def countIngredients(items: Seq[Item], result: Set[String]) =
+  def countIngredients(items: Seq[Item], result: Set[String]): Int =
     result.toList.map(i => items.flatMap(_.ingredients).count(_ == i)).sum
 
   def assignAllergens(probable: Map[String, List[String]]): List[(String, String)] =
