@@ -15,48 +15,33 @@ object Day21 {
     }
   }
 
-  def all(items: List[Item]): Set[String] = items.flatMap(_.ingredients).toSet
+  def allIngredients(items: List[Item]): Set[String] = items.flatMap(_.ingredients).toSet
 
   def probableAllergens(items: List[Item]): Map[String, List[String]] = {
-    val step1 = items.map { case Item(ingredients, allergens) =>
-
+    val rawP = items.map { case Item(ingredients, allergens) =>
       val p = 1d / (ingredients.size - allergens.size + 1).toDouble
-      
       allergens.map { (_, ingredients.map { (_, p) }.toMap) }.toMap
     }
 
-    val step2 = step1.foldLeft(Map.empty[String, Map[String, Double]]) {
-      case (state, current) => 
-        (state.toSeq ++ current.toSeq).groupBy(_._1).map {
-          case (allergen, values) => 
-            (allergen, values.map(_._2).foldLeft(Map.empty[String, Double]) {
-              case (total, ingredients) => 
-                (total.toSeq ++ ingredients.toSeq).groupBy(_._1).map { 
-                  case (i, v) => (i, v.map(_._2).sum) 
-                }.toMap
-            })
-        }.toMap
+    val mergedP = rawP.reduce[Map[String, Map[String, Double]]](mergeMapOfMaps)
+
+    val maxP = mergedP.mapValues(_.maxBy(_._2)._2)
+
+    mergedP.map { 
+      case (a, ingrs) => (a, ingrs.filter { case (i, v) => v == maxP(a) }.map(_._1).toList) 
     }
-
-    val maxP = step2.mapValues(_.maxBy(_._2)._2)
-
-    step2.map { 
-      case (a, ingrs) => 
-        (a, ingrs.filter { 
-          case (i, v) => v == maxP(a) }.map(_._1).toList) 
-        }
   }
 
-  def calculate(probable: Map[String, List[String]]): Set[String] =
+  def calculateAllergens(probable: Map[String, List[String]]): Set[String] =
     probable.values.foldLeft(Set.empty[String]) {
       case (state, current) =>
         state ++ current
     }
 
-  def count(items: Seq[Item], result: Set[String]) =
+  def countIngredients(items: Seq[Item], result: Set[String]) =
     result.toList.map(i => items.flatMap(_.ingredients).count(_ == i)).sum
 
-  def assign(probable: Map[String, List[String]]): List[(String, String)] =
+  def assignAllergens(probable: Map[String, List[String]]): List[(String, String)] =
     probable.toSeq.sortBy(_._2.size).foldLeft(List.empty[(String, String)]) {
       case (state, (allergen, ingredients)) =>
         val asigned = state.map(_._2).toSet
@@ -66,6 +51,16 @@ object Day21 {
           case _ => throw new IllegalArgumentException(s"$result")
         }
     }
+
+  def mergeMaps[K, V](map1: Map[K, V], map2: Map[K, V])(implicit num: Numeric[V]): Map[K, V] =
+    (map1.toSeq ++ map2.toSeq).groupBy(_._1).map {
+      case (k, values) => (k, values.map(_._2).sum)
+    }
+  
+  def mergeMapOfMaps[K, V](map1: Map[K, Map[K, V]], map2: Map[K, Map[K, V]])(implicit num: Numeric[V]): Map[K, Map[K, V]] =
+    (map1.toSeq ++ map2.toSeq).groupBy(_._1).map {
+      case (k, values) => (k, values.map(_._2).reduce[Map[K, V]](mergeMaps))
+    }
 }
 
 object Day21Part1 extends App {
@@ -73,10 +68,10 @@ object Day21Part1 extends App {
 
   val items = Source.fromResource("ingredients.txt").getLines().map(parseLine).toList
   val probable = probableAllergens(items)
-  val result = all(items) -- calculate(probable)
-  println(count(items, result))
+  val result = allIngredients(items) -- calculateAllergens(probable)
+  println(countIngredients(items, result))
 
-  println(assign(probable).sortBy(_._1).map(_._2).mkString(","))
+  println(assignAllergens(probable).sortBy(_._1).map(_._2).mkString(","))
 }
 
 object Day21Test extends App {
@@ -94,12 +89,12 @@ object Day21Test extends App {
   // (soy,List(sqjhc, fvjkl))
   val probable = probableAllergens(items)
 
-  val result = all(items) -- calculate(probable)
+  val result = allIngredients(items) -- calculateAllergens(probable)
 
   assert(result == Set("kfcds", "nhms", "sbzzf", "trh"))
-  assert(count(items, result) == 5)
+  assert(countIngredients(items, result) == 5)
 
-  assign(probable).foreach(println)
+  assignAllergens(probable).foreach(println)
 
   println("OK")
 }
