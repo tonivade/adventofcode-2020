@@ -17,7 +17,7 @@ object Day21 {
 
   def all(items: List[Item]): Set[String] = items.flatMap(_.ingredients).toSet
 
-  def calculate(items: List[Item]): Set[String] = {
+  def probableAllergens(items: List[Item]): Map[String, List[String]] = {
     val step1 = items.map { case Item(ingredients, allergens) =>
 
       val p = 1d / (ingredients.size - allergens.size + 1).toDouble
@@ -40,31 +40,43 @@ object Day21 {
 
     val maxP = step2.mapValues(_.maxBy(_._2)._2)
 
-    val step3 = step2.map { 
+    step2.map { 
       case (a, ingrs) => 
         (a, ingrs.filter { 
           case (i, v) => v == maxP(a) }.map(_._1).toList) 
         }
+  }
 
-    val step4 = step3.values.foldLeft(Set.empty[String]) {
+  def calculate(probable: Map[String, List[String]]): Set[String] =
+    probable.values.foldLeft(Set.empty[String]) {
       case (state, current) =>
         state ++ current
     }
 
-    step4
-  }
-
-  def count(items: Seq[Item], result: Set[String]) = {
+  def count(items: Seq[Item], result: Set[String]) =
     result.toList.map(i => items.flatMap(_.ingredients).count(_ == i)).sum
-  }
+
+  def assign(probable: Map[String, List[String]]): List[(String, String)] =
+    probable.toSeq.sortBy(_._2.size).foldLeft(List.empty[(String, String)]) {
+      case (state, (allergen, ingredients)) =>
+        val asigned = state.map(_._2).toSet
+        val result = ingredients.filterNot(asigned.contains(_))
+        result match {
+          case head :: Nil => state :+ (allergen, head)
+          case _ => throw new IllegalArgumentException(s"$result")
+        }
+    }
 }
 
 object Day21Part1 extends App {
   import Day21._
 
   val items = Source.fromResource("ingredients.txt").getLines().map(parseLine).toList
-  val result = all(items) -- calculate(items)
+  val probable = probableAllergens(items)
+  val result = all(items) -- calculate(probable)
   println(count(items, result))
+
+  println(assign(probable).sortBy(_._1).map(_._2).mkString(","))
 }
 
 object Day21Test extends App {
@@ -80,10 +92,14 @@ object Day21Test extends App {
   // (dairy,List(mxmxvkd))
   // (fish,List(mxmxvkd, sqjhc))
   // (soy,List(sqjhc, fvjkl))
-  val result = all(items) -- calculate(items)
+  val probable = probableAllergens(items)
+
+  val result = all(items) -- calculate(probable)
 
   assert(result == Set("kfcds", "nhms", "sbzzf", "trh"))
   assert(count(items, result) == 5)
+
+  assign(probable).foreach(println)
 
   println("OK")
 }
