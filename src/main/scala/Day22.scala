@@ -55,6 +55,8 @@ object Day22 {
       Game(p1, p2)
     }
 
+    def break: Game = Game(player1, Player(List.empty))
+
     def winner: Option[Player] = 
       if (player1.left == 0)
         Some(player2)
@@ -78,13 +80,15 @@ object Day22 {
     }
   }
 
-  type State = (Set[(Card, Card)], Game)
+  type State = (Set[Game], Game)
 
   def play2(state: State): Game = 
     state match {
       case (played, game) =>
         if (game.gameover)
           game
+        else if (played.contains(game))
+          game.break
         else if (game.recursive) {
           val result = play2(played, game.nextRecursive)
           
@@ -94,14 +98,14 @@ object Day22 {
             case (next, card1, card2) => throw new IllegalStateException(s"$card1,$card2")
           }
 
-          play2(played, next)
+          play2(played + game, next)
         } else {
           val next = game.next match {
             case (next, card1, card2) if card1 > card2 => next.updateP1(card1, card2)
             case (next, card1, card2) if card1 < card2 => next.updateP2(card2, card1)
             case (next, card1, card2) => throw new IllegalStateException(s"$card1,$card2")
           }
-          play2(played, next)
+          play2(played + game, next)
         }
     }
 }
