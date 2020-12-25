@@ -25,10 +25,7 @@ object Day23 {
     }
 
     def take(n: Int): (List[Int], List[Int]) = 
-      (
-        circular(list).drop(1).take(n).toList,
-        circular(list).drop(n + 1).take(list.size - n - 1).toList
-      )
+      (list.tail.take(n), list.drop(n).tail)
 
     def search(target: Int, rest: List[Int]): Int =
       if (target < 1)
@@ -50,9 +47,20 @@ object Day23 {
 
   object CircularList {
     def apply(items: Int*): CircularList = CircularList(List(items:_*))
+
+    def build(items: Int*): CircularList = {
+      val start = List(items:_*)
+
+      val rest = for {
+        x <- (start.max until 1000000)
+      } yield(x)
+
+      CircularList(start ++ rest)
+    }
   }
 
   def play(limit: Int)(input: CircularList): CircularList = {
+    if (limit % 100 == 0) println(limit)
     if (limit > 0)
       play(limit - 1)(input.move)
     else
@@ -83,6 +91,9 @@ object Day23Test extends App {
   
   val result100 = play(100)(list1)
   assert(result100.label == "67384529")
+
+//  val result10M = play(10000000)(CircularList.build(3, 8, 9, 1, 2, 5, 4, 6, 7))
+//  println(result10M)
 
   println("OK")
 }
