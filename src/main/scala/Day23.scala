@@ -27,36 +27,29 @@ object Day23 {
    * |2|5|8|2|6|4|7|3|9|1|
    * 
    */
-  case class CircularList(list: Vector[Int]) {
+  case class CircularList(array: Vector[Int]) {
 
-    def toVector: Vector[Int] = take(0, list.size - 1)
+    def toVector: Vector[Int] = take(0, array.size - 1)
 
     def move: CircularList = {
-      val current = list(0)
+      val current = array(0)
       val taken = take(current, 3)
-      var target = search(current - 1, taken).orElse(search(list.size - 1, taken)).getOrElse(0)
+      var target = search(current - 1, taken).orElse(search(array.size - 1, taken)).getOrElse(0)
 
       assert(target > 0, s"invalid target: $target")
 
-      val head = takeWhile(taken.last, target)
-      val tail = takeWhile(target, current)
-      val result = (head :+ target) ++ taken ++ (tail :+ current)
+      val next = array
+        .updated(0, array(taken.last))        // the first should be the next after the last taken
+        .updated(target, taken.head)          // the target should point to the first taken
+        .updated(taken.last, array(target))   // the last taken should point the next from target
+        .updated(current, array(taken.last))  // and the current should point to the next after the taken to complete the circle
 
-      CircularList(result:_*)
-    }
-      
-    def takeWhile(from: Int, target: Int): Vector[Int] = {
-      val next = list(from)
-      if (next != target) {
-        next +: takeWhile(next, target) 
-      }
-      else 
-        Vector.empty
+      CircularList(next)
     }
 
     def take(from: Int, n: Int): Vector[Int] = 
       if (n > 0) {
-        val current = list(from)
+        val current = array(from)
         current +: take(current, n - 1) 
       }
       else 
@@ -70,7 +63,7 @@ object Day23 {
         else
           Some(target)
 
-    def label: String = take(1, list.size - 2).mkString
+    def label: String = take(1, array.size - 2).mkString
   }
 
   object CircularList {
@@ -87,15 +80,23 @@ object Day23 {
 
       CircularList(res.toVector)
     }
+
+    def apply(limit: Int)(items: Int*): CircularList = {
+      val padding = for {
+        i <- (items.max + 1) to limit
+      } yield (i)
+      
+      val padded = items ++ padding
+
+      CircularList(padded:_*)
+    }
   }
 
-  def play(limit: Int)(input: CircularList): CircularList = {
-    if (limit % 100 == 0) println(limit)
+  def play(limit: Int)(input: CircularList): CircularList =
     if (limit > 0)
       play(limit - 1)(input.move)
     else
       input
-  }
 }
 
 object Day23Part1 extends App {
@@ -106,14 +107,20 @@ object Day23Part1 extends App {
   println(result.label)
 }
 
+object Day23Part2 extends App {
+  import Day23._
+
+  val result = play(10000000)(CircularList(1000000)(9, 6, 2, 7, 1, 3, 8, 5, 4))
+
+  println(result.take(1, 2).foldLeft(1L)(_ * _))
+}
+
 object Day23Test extends App {
   import Day23._
 
-  // 3,2,5,8,6,4,7,3,9,1
-  // 3,2,5,8,6,4,7,0,9,1
   val list1 = CircularList(3, 8, 9, 1, 2, 5, 4, 6, 7)
 
-  assert(list1.list == Vector(3, 2, 5, 8, 6, 4, 7, 3, 9, 1))
+  assert(list1.array == Vector(3, 2, 5, 8, 6, 4, 7, 3, 9, 1))
   assert(list1.toVector == Vector(3, 8, 9, 1, 2, 5, 4, 6, 7))
 
   assert(list1.move == CircularList(2, 8, 9, 1, 5, 4, 6, 7, 3))
@@ -127,8 +134,9 @@ object Day23Test extends App {
   val result100 = play(100)(list1)
   assert(result100.label == "67384529")
 
-  //val result10M = play(10000000)(CircularList(1000000)(3, 8, 9, 1, 2, 5, 4, 6, 7))
-  //println(result10M)
+  val result10M = play(10000000)(CircularList(1000000)(3, 8, 9, 1, 2, 5, 4, 6, 7))
+  assert(result10M.take(1, 2) == Vector(934001, 159792))
+  assert(result10M.take(1, 2).foldLeft(1L)(_ * _) == 149245887792L)
 
   println("OK")
 }
