@@ -46,7 +46,7 @@ object Day24 {
    *     \/   \/
    */
   object Motion {
-    val NW = (0, -1, -1)
+    val NW = (0, -1, 1)
     val NE = (1, -1, 0)
     val E = (1, 0, -1)
     val W = (-1, 0, 1)
@@ -134,7 +134,7 @@ object Day24Test extends App {
 
   val result = flip(motions, HexaGrid.empty)
 
-  assert(result.black == 6)
+  assert(result.black == 4)
 
   val input1 = """sesenwnenenewseeswwswswwnenewsewsw
                 |neeenesenwnwwswnenewnwwsewnenwseswesw
@@ -159,5 +159,5 @@ object Day24Test extends App {
 
   val result1 = perform(parseAll(input1))
 
-  println(result1.black)
+  assert(result1.black == 10)
 }
