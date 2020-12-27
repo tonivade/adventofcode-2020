@@ -5,6 +5,7 @@ import scala.io.Source
 
 object Day25 {
 
+  val subject = 7
   val magic = 20201227L
 
   def step(x: Long, subject: Long): Long = (x * subject) % magic
@@ -15,8 +16,8 @@ object Day25 {
       loop(n - 1, step(x, subject))(subject)
     else x
 
-  def bruteforce(key: Long): Option[Long] = {
-    Stream.iterate(1L)(step(_, 7))
+  def bruteforce(key: Long)(subject: Long): Option[Long] = {
+    Stream.iterate(1L)(step(_, subject))
       .zipWithIndex
       .find(_._1 == key)
       .map(_._2)
@@ -28,7 +29,7 @@ object Day25Part1 extends App {
 
   val Seq(card, door) = Source.fromResource("keys.txt").getLines().map(_.toLong).toSeq
 
-  val loopSizeCard = bruteforce(card).get
+  val loopSizeCard = bruteforce(card)(subject).get
 
   // 16311885
   println(loop(loopSizeCard)(door))
@@ -36,16 +37,14 @@ object Day25Part1 extends App {
 
 object Day25Test extends App {
   import Day25._
-  
-  val subject = 7
 
   val doorPubKey = 17807724L
   val cardPubKey = 5764801L
 
   val secretKey = 14897079
 
-  val doorLoopSize = bruteforce(doorPubKey).get
-  val cardLoopSize = bruteforce(cardPubKey).get
+  val doorLoopSize = bruteforce(doorPubKey)(subject).get
+  val cardLoopSize = bruteforce(cardPubKey)(subject).get
 
   assert(doorLoopSize == 11)
   assert(cardLoopSize == 8)
