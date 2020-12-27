@@ -6,7 +6,7 @@ import scala.io.Source
 object Day25 {
 
   val subject = 7
-  val magic = 20201227L
+  val magic = 20201227
 
   def step(x: Long, subject: Long): Long = (x * subject) % magic
 
@@ -38,8 +38,8 @@ object Day25Part1 extends App {
 object Day25Test extends App {
   import Day25._
 
-  val doorPubKey = 17807724L
-  val cardPubKey = 5764801L
+  val doorPubKey = 17807724
+  val cardPubKey = 5764801
 
   val secretKey = 14897079
 
