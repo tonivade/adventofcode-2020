@@ -78,15 +78,12 @@ object Day24 {
     val empty = HexaGrid(Map.empty)
   }
 
-  def flip(motions: Seq[Motion], initial: HexaGrid): HexaGrid = {
-    val (result, _) = motions.foldLeft((initial, Position.zero)) {
-      case ((grid, current), motion) =>
-        val next = current.move(motion)
-
-        (grid.update(next), next)
+  def flip(motions: Seq[Motion], grid: HexaGrid): HexaGrid = {
+    val last = motions.foldLeft(Position.zero) {
+      case (current, motion) => current.move(motion)
     }
 
-    result
+    grid.update(last)
   }
 
   def parseLine(line: String): Seq[Motion] = {
@@ -134,7 +131,7 @@ object Day24Test extends App {
 
   val result = flip(motions, HexaGrid.empty)
 
-  assert(result.black == 4)
+  assert(result.black == 1)
 
   val input1 = """sesenwnenenewseeswwswswwnenewsewsw
                 |neeenesenwnwwswnenewnwwsewnenwseswesw
@@ -160,4 +157,6 @@ object Day24Test extends App {
   val result1 = perform(parseAll(input1))
 
   assert(result1.black == 10)
+
+  println("OK")
 }
