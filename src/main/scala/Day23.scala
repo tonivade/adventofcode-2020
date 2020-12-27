@@ -5,12 +5,6 @@ import scala.collection.parallel.immutable.ParVector
 
 object Day23 {
 
-  def circular[A](a: Seq[A]): Stream[A] = {
-    val repeat = a.toStream
-    def b: Stream[A] = repeat #::: b
-    b
-  }
-
   /*
    * Vector will contain on each position the value of the next element
    * 
@@ -29,11 +23,11 @@ object Day23 {
    */
   case class CircularList(array: Vector[Int]) {
 
-    def toVector: Vector[Int] = take(0, array.size - 1)
+    def toVector: Vector[Int] = take(0)(array.size - 1)
 
     def move: CircularList = {
       val current = array(0)
-      val taken = take(current, 3)
+      val taken = take(current)(3)
       var target = search(current - 1, taken).orElse(search(array.size - 1, taken)).getOrElse(0)
 
       assert(target > 0, s"invalid target: $target")
@@ -47,10 +41,10 @@ object Day23 {
       CircularList(next)
     }
 
-    def take(from: Int, n: Int): Vector[Int] = 
+    def take(from: Int)(n: Int): Vector[Int] = 
       if (n > 0) {
         val current = array(from)
-        current +: take(current, n - 1) 
+        current +: take(current)(n - 1) 
       }
       else 
         Vector.empty
@@ -63,7 +57,7 @@ object Day23 {
         else
           Some(target)
 
-    def label: String = take(1, array.size - 2).mkString
+    def label: String = take(1)(array.size - 2).mkString
   }
 
   object CircularList {
@@ -92,6 +86,7 @@ object Day23 {
     }
   }
 
+  @tailrec
   def play(limit: Int)(input: CircularList): CircularList =
     if (limit > 0)
       play(limit - 1)(input.move)
@@ -112,7 +107,7 @@ object Day23Part2 extends App {
 
   val result = play(10000000)(CircularList(1000000)(9, 6, 2, 7, 1, 3, 8, 5, 4))
 
-  println(result.take(1, 2).foldLeft(1L)(_ * _))
+  println(result.take(1)(2).foldLeft(1L)(_ * _))
 }
 
 object Day23Test extends App {
@@ -135,8 +130,8 @@ object Day23Test extends App {
   assert(result100.label == "67384529")
 
   val result10M = play(10000000)(CircularList(1000000)(3, 8, 9, 1, 2, 5, 4, 6, 7))
-  assert(result10M.take(1, 2) == Vector(934001, 159792))
-  assert(result10M.take(1, 2).foldLeft(1L)(_ * _) == 149245887792L)
+  assert(result10M.take(1)(2) == Vector(934001, 159792))
+  assert(result10M.take(1)(2).foldLeft(1L)(_ * _) == 149245887792L)
 
   println("OK")
 }
