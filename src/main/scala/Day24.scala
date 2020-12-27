@@ -1,6 +1,7 @@
 package adventofcode
 
 import scala.io.Source
+import scala.annotation.tailrec
 
 object Day24 {
 
@@ -52,6 +53,8 @@ object Day24 {
     val W = (-1, 0, 1)
     val SE = (0, 1, -1)
     val SW = (-1, 1, 0)
+
+    val ALL = Seq(NW, NE, E, W, SE, SW)
   }
 
   sealed trait Tile
@@ -62,11 +65,37 @@ object Day24 {
    * Using cube coordinates, https://www.redblobgames.com/grids/hexagons/
    */ 
   case class HexaGrid(grid: Map[Position, Tile]) {
+
+    def all: Seq[Position] = {
+
+      val keys = grid.keySet
+
+      val maxX = keys.map(_.x).max
+      val minX = keys.map(_.x).min
+      val maxY = keys.map(_.y).max
+      val minY = keys.map(_.y).min
+      val maxZ = keys.map(_.z).max
+      val minZ = keys.map(_.z).min
+
+      val all = for {
+        z <- (minZ - 1) to (maxZ + 1)
+        y <- (minY - 1) to (maxY + 1)
+        x <- (minX - 1) to (maxX + 1)
+      } yield Position(x, y, z)
+
+      all
+    }
+
+    def get(position: Position): Tile = grid.getOrElse(position, White)
+
+    def adjacent(position: Position): Seq[Position] =
+      Motion.ALL.map(position.move)
+        .filter(get(_) == Black)
     
     def update(position: Position): HexaGrid = {
-      val updated = grid.getOrElse(position, White) match {
-        case Black => grid.updated(position, White)
-        case White => grid.updated(position, Black)
+      val updated = get(position) match {
+        case Black => grid + (position -> White)
+        case White => grid + (position -> Black)
       }
       HexaGrid(updated)
     }
@@ -109,6 +138,33 @@ object Day24 {
     all.foldLeft(HexaGrid.empty) {
       case (grid, motions) => flip(motions, grid)
     }
+
+  def step(grid: HexaGrid): HexaGrid = {
+    val all = grid.all
+
+    val result = all.map { p => 
+      val tile = grid.get(p)
+      val adjacent = grid.adjacent(p)
+
+      (tile, adjacent.map(grid.get).count(_ == Black)) match {
+        case (Black, 0) => (p -> White)
+        case (Black, x) if x > 2 => (p -> White)
+        case (White, 2) => (p -> Black)
+        case (t, _) => (p -> t)
+      }
+    }
+
+    HexaGrid(result.toMap)
+  }
+
+  @tailrec
+  def process(limit: Int)(initial: HexaGrid): HexaGrid = {
+    println(s"step:$limit,black=${initial.black}")
+    if (limit > 0)
+      process(limit - 1)(step(initial))
+    else
+      initial
+  }
 }
 
 object Day24Part1 extends App {
@@ -119,6 +175,7 @@ object Day24Part1 extends App {
   val result = perform(parseAll(input))
 
   println(result.black)
+  println(process(100)(result).black)
 }
 
 object Day24Test extends App {
@@ -157,6 +214,10 @@ object Day24Test extends App {
   val result1 = perform(parseAll(input1))
 
   assert(result1.black == 10)
+
+  assert(process(1)(result1).black == 15)
+  assert(process(2)(result1).black == 12)
+//  assert(process(100)(result1).black == 2208)
 
   println("OK")
 }
