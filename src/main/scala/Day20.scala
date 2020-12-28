@@ -108,6 +108,57 @@ object Day20 {
   def connectedTile(a: Int, b: Int, matches: Map[Int, Result]): Seq[Int] =
     matches.values.filter(r => r.contains(a) && r.contains(b)).map(_.id).toSeq
 
+  def fixTile4(current: Tile, left: Tile, top: Tile): Tile = {
+    val combinations = for {
+      c <- current.all
+      l <- left.all
+      t <- top.all
+    } yield(c, l, t)
+
+    val result = combinations.filter {
+      case (c, l, t) => c.left == l.right && c.top == t.bottom
+    }
+
+    result match {
+      case (c, _, _) :: Nil => c.fix
+      case _ => throw new IllegalStateException(s"${current.id}")
+    }
+  }
+
+  def fixTile3(current: Tile, right: Tile, top: Tile): Tile = {
+    val combinations = for {
+      c <- current.all
+      r <- right.all
+      t <- top.all
+    } yield(c, r, t)
+
+    val result = combinations.filter {
+      case (c, r, t) => c.right == r.left && c.top == t.bottom
+    }
+
+    result match {
+      case (c, _, _) :: Nil => c.fix
+      case _ => throw new IllegalStateException(s"${current.id}")
+    }
+  }
+
+  def fixTile2(current: Tile, left: Tile, bottom: Tile): Tile = {
+    val combinations = for {
+      c <- current.all
+      l <- left.all
+      b <- bottom.all
+    } yield(c, l, b)
+
+    val result = combinations.filter {
+      case (c, l, b) => c.left == l.right && c.bottom == b.top
+    }
+
+    result match {
+      case (c, _, _) :: Nil => c.fix
+      case _ => throw new IllegalStateException(s"${current.id}")
+    }
+  }
+
   def fixTile(current: Tile, right: Tile, bottom: Tile): Tile = {
     val combinations = for {
       c <- current.all
@@ -177,8 +228,8 @@ object Day20 {
     }
   }
 
-  def fix(image: Seq[List[Int]], tiles: Map[Int, Tile]): Map[Int, Tile] =
-    (0 until (image(0).size - 1)).flatMap { i =>
+  def fix(image: Seq[List[Int]], tiles: Map[Int, Tile]): Map[Int, Tile] = {
+    val fixed = (0 until (image(0).size - 1)).flatMap { i =>
       val current = image.map(_(i))
       val next = image.map(_(i + 1))
 
@@ -189,18 +240,45 @@ object Day20 {
 
         (tile, fixTile(tiles(tile), tiles(right), tiles(bottom)))
       }
-    }.toMap
+    }
 
-  def printImage(image: Seq[Seq[Tile]]): Seq[String] = {
+    val right = image.map(_(image.size - 1))
+    val rightPrev = image.map(_(image.size - 2))
+    
+    val rightFixed = (0 until (right.size - 1)).map { j =>
+      val tile = right(j)
+      val left = rightPrev(j)
+      val bottom = right(j + 1)
 
-    val z = image.map { row =>
+      (tile, fixTile2(tiles(tile), tiles(left), tiles(bottom)))
+    }
+
+    val bottom = image(image.size - 1)
+    val bottomPrev = image(image.size - 2)
+
+    val bottomFixed = (0 until (bottom.size - 1)).map { j =>
+      val tile = bottom(j)
+      val right = bottom(j + 1)
+      val top = bottomPrev(j)
+
+      (tile, fixTile3(tiles(tile), tiles(right), tiles(top)))
+    }
+
+    val last = image.last.last
+    val left = image.last.dropRight(1).last
+    val top = image.map(_.last).dropRight(1).last
+
+    val fixedLast = (last, fixTile4(tiles(last), tiles(left), tiles(top)))
+
+    ((fixed ++ rightFixed ++ bottomFixed) :+ fixedLast).toMap
+  }
+
+  def printImage(image: Seq[Seq[Tile]]): Seq[String] =
+    image.map { row =>
       row.foldLeft(Seq.fill(row(0).image.size)("")) {
         case (state, tile) => state.zip(tile.image).map { case (a, b) => a + b}
       }.mkString("\n")
     }
-
-    z
-  }
 
   val input = Source.fromResource("tiles.txt").mkString
 }
