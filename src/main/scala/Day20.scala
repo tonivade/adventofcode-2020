@@ -24,6 +24,8 @@ object Day20 {
 
     def fix: Tile = Tile(id, image, true)
 
+    def noBorders: Tile = Tile(id, crop(image), fixed)
+
     def all: Seq[Tile] = 
       if (fixed)
         Seq(this)
@@ -52,6 +54,10 @@ object Day20 {
       for {
         i <- (input.size - 1) to 0 by -1
       } yield (input(i))
+
+    private def crop(input: Seq[String]): Seq[String] =
+      input.drop(1).dropRight(1)
+        .map(_.drop(1).dropRight(1))
   }
 
   case class Result(id: Int, top: Option[Int], botton: Option[Int], left: Option[Int], right: Option[Int]) {
@@ -306,8 +312,7 @@ object Day20Part2 extends App {
 
   val fixedTiles = fix(image, index)
 
-  val result = image
-    .map(row => row.map(t => fixedTiles.getOrElse(t, index(t))))
+  val result = image.map(_.map(fixedTiles)).map(_.map(_.noBorders))
 
   println(mkImage(result))
 }
@@ -461,10 +466,14 @@ object Day20Test extends App {
 
   val fixed = fix(image, index)
 
-  val result = image
-    .map(row => row.map(t => fixed.getOrElse(t, index(t))))
+  val result = image.map(_.map(fixed)).map(_.map(_.noBorders))
+  
+  val string = mkImage(result)
 
-  println(mkImage(result))
+  assert(string.linesIterator.size == 24)
+  assert(string.linesIterator.map(_.size).toList.head == 24)
+
+  string.linesIterator.zipWithIndex.foreach { case (line, i) => println(i + ":" + line) }
 
   println("OK")
 }
