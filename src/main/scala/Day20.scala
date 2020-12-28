@@ -4,6 +4,7 @@ import scala.io.Source
 import scala.collection.mutable
 import scala.collection.SortedSet
 import scala.collection.mutable.HashSet
+import scala.annotation.tailrec
 
 object Day20 {
 
@@ -35,6 +36,7 @@ object Day20 {
   case class Result(id: Int, top: Option[Int], botton: Option[Int], left: Option[Int], right: Option[Int]) {
     def matches: Seq[Int] = Seq(top, botton, left, right).flatMap(_.toList)
     def count: Int = matches.size
+    def contains(value: Int): Boolean = matches.contains(value)
   }
 
   def parse(input: String): Seq[Tile] = 
@@ -90,63 +92,47 @@ object Day20 {
     input.values.filter(_.count == 2)
       .map(_.id).foldLeft(1L)(_ * _)
 
-  sealed trait Move {
-    def turn: Move
-    def reverse: Move
-    def next(input: Result): Option[Int]
-  }
-  case object Top extends Move {
-    override def turn: Move = Right
-    override def reverse: Move = Bottom
-    override def next(input: Result): Option[Int] = input.top
-  }
-  case object Bottom extends Move {
-    override def turn: Move = Left
-    override def reverse: Move = Top
-    override def next(input: Result): Option[Int] = input.botton
-  }
-  case object Left extends Move {
-    override def turn: Move = Top
-    override def reverse: Move = Right
-    override def next(input: Result): Option[Int] = input.left
-  }
-  case object Right extends Move {
-    override def turn: Move = Bottom
-    override def reverse: Move = Left
-    override def next(input: Result): Option[Int] = input.right
-  }
+  def connected(a: Int, b: Int, matches: Map[Int, Result]): Seq[Int] =
+    matches.values.filter(r => r.contains(a) && r.contains(b)).map(_.id).toSeq
 
-  def search(input: Result, matches: Map[Int, Result]): (Int, Set[List[Int]]) = {
+  def searchPath(from: Int, to: Int, matches: Map[Int, Result]): List[Int] = {
+    val borders = matches.filter(_._2.count == 3).toMap
 
-    val size = Math.sqrt(matches.size).toInt
+    @tailrec
+    def loop(current: Int, to: Int, path: List[Int]): List[Int] = {
+      val tile = matches(current)
 
-    val memory = HashSet.empty[List[Int]]
+      if (tile.contains(to))
+        path :+ current :+ to
+      else {
+        val next = tile.matches
+          .filter(borders.contains(_))
+          .filterNot(path.contains(_))
 
-    def follow(move: Move)(input: Int, path: List[Int]): List[Int] = {
-      matches.get(input).flatMap(move.next) match {
-        case Some(value) => 
-          if (path.contains(value))
-            // loop detected
-            follow(move.turn)(value, path.takeWhile(_ != value))
-          else
-            follow(move)(value, path :+ value)
-        case None => 
-          if (path.size < size)
-            // not completed
-            follow(move.turn)(input, path)
-          else if (path.size == size)
-            // success
-            path
-          else
-            Nil
-        }
+        if (next.size == 1)
+          loop(next.head, to, path :+ current)
+        else Nil
+      }
     }
+      
+    val input = matches(from)
+    val output = input.matches.filter(borders.contains(_))
 
-    val paths = Seq(Top, Bottom, Left, Right)
-      .map(follow(_)(input.id, List(input.id))).filterNot(_.isEmpty)
-      .toSet
+    val result = output.map(loop(_, to, from :: Nil)).filterNot(_.isEmpty)
 
-    (input.id, paths)
+    result match {
+      case path :: Nil => path
+      case _ => Nil
+    }
+  }
+
+  def searchBorders(matches: Map[Int, Result]): Seq[List[Int]] = {
+    val corners = matches.values.filter(_.count == 2).toSeq
+
+    corners.combinations(2).map {
+      case a :: b :: Nil => searchPath(a.id, b.id, matches)
+      case _ => throw new IllegalArgumentException("error")
+    }.filterNot(_.isEmpty).toList
   }
 
   val input = Source.fromResource("tiles.txt").mkString
@@ -163,19 +149,9 @@ object Day20Part1 extends App {
 object Day20Part2 extends App {
   import Day20._
   
-  val tiles = parse(input)
+  val matches = parse(input) |> findMatches
 
-  val matches = findMatches(tiles)
-
-  val Seq(corner1, corner2, corner3, corner4) = 
-    matches.values.filter(_.count == 2).toSeq
-
-  println(search(corner1, matches))
-//  println(search(corner2, matches))
-//  println(search(corner3, matches))
-//  println(search(corner4, matches))
-  
-  matches.values.filter(_.count == 3).foreach(println)
+  searchBorders(matches).foreach(println)
 }
 
 object Day20Test extends App {
@@ -308,13 +284,15 @@ object Day20Test extends App {
 
   assert(part1(matches) == 20899048083289L)
 
-  val Seq(corner1, corner2, corner3, corner4) = 
-    matches.values.filter(_.count == 2).toSeq
+  /*
+   * 1951    2311    3079
+   * 2729    1427    2473
+   * 2971    1489    1171
+   */
+  searchBorders(matches).foreach(println)
 
-  println(search(corner1, matches))
-  println(search(corner2, matches))
-  println(search(corner3, matches))
-  println(search(corner4, matches))
+  assert(connected(2729, 2311, matches).contains(1427))
+  assert(connected(2971, 1427, matches).contains(1489))
 
   println("OK")
 }
