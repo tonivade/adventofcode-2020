@@ -286,7 +286,59 @@ object Day20 {
       }.mkString("\n")
     }.mkString("\n")
 
+  def views(dimension: (Int, Int), image: String): Seq[String] = {
+
+    val lines = image.linesIterator.toList
+
+    val width = lines.map(_.size).head
+    val height = lines.size
+
+    val y = for {
+      w <- (0 until width - dimension._2)
+    } yield lines.slice(w, w + dimension._2)
+
+    val xy = y.flatMap { slice =>
+      for {
+        h <- (0 until height - dimension._1)
+      } yield slice.map(_.slice(h, h + dimension._1))
+    }
+
+    xy.map(_.mkString("\n"))
+  }
+
+  def comparePattern(pattern: String, slice: String): Boolean = {
+    val p = pattern.linesIterator.mkString
+    val s = slice.linesIterator.mkString
+
+    val r = p.zip(s).map {
+      case (' ', _) => ' '
+      case ('#', '#') => '#'
+      case ('#', c) => c
+      case (a, b) => throw new IllegalStateException(s"$a,$b")
+    }.mkString
+
+    println(p)
+    println(s)
+    println(r)
+    println()
+
+    p == r
+  }
+
+  def searchPattern(pattern: String, image: String): Int = {
+    val width = pattern.linesIterator.map(_.size).toList.head
+    val height = pattern.linesIterator.size
+
+    val allViews = views((width, height), image)
+
+    allViews.filter(comparePattern(pattern, _)).size
+  }
+
   val input = Source.fromResource("tiles.txt").mkString
+
+  val pattern = """                  # 
+                  |#    ##    ##    ###
+                  | #  #  #  #  #  #   """.stripMargin
 }
 
 object Day20Part1 extends App {
@@ -314,7 +366,7 @@ object Day20Part2 extends App {
 
   val result = image.map(_.map(fixedTiles)).map(_.map(_.noBorders))
 
-  println(mkImage(result))
+  searchPattern(pattern, mkImage(result))
 }
 
 object Day20Test extends App {
@@ -473,7 +525,9 @@ object Day20Test extends App {
   assert(string.linesIterator.size == 24)
   assert(string.linesIterator.map(_.size).toList.head == 24)
 
-  string.linesIterator.zipWithIndex.foreach { case (line, i) => println(i + ":" + line) }
+  println(string)
+
+  println(searchPattern(pattern, string))
 
   println("OK")
 }
