@@ -128,11 +128,23 @@ object Day20 {
 
   def searchBorders(matches: Map[Int, Result]): Seq[List[Int]] = {
     val corners = matches.values.filter(_.count == 2).toSeq
-
+    
     corners.combinations(2).map {
       case a :: b :: Nil => searchPath(a.id, b.id, matches)
       case _ => throw new IllegalArgumentException("error")
     }.filterNot(_.isEmpty).toList
+  }
+
+  def build(matches: Map[Int, Result], left: List[Int], top: List[Int]): List[List[Int]] = {
+    def column(top: Int, prev: List[Int]): List[Int] =
+      prev.tail.foldLeft(top :: Nil) {
+        case (state, current) =>
+          state :+ connected(state.last, current, matches).find(!prev.contains(_)).get
+      }
+
+    (1 to 11).foldLeft(left :: Nil) {
+      case (state, current) => state :+ column(top(current), state.last)
+    }
   }
 
   val input = Source.fromResource("tiles.txt").mkString
@@ -148,10 +160,14 @@ object Day20Part1 extends App {
 
 object Day20Part2 extends App {
   import Day20._
-  
-  val matches = parse(input) |> findMatches
 
-  searchBorders(matches).foreach(println)
+  val tiles = parse(input)
+  val matches = findMatches(tiles)
+
+  val List(top, left, _, _) = searchBorders(matches)
+  assert(top.head == left.head)
+
+  build(matches, left, top).foreach(println)
 }
 
 object Day20Test extends App {
