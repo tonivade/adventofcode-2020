@@ -317,11 +317,6 @@ object Day20 {
       case (a, b) => throw new IllegalStateException(s"$a,$b")
     }.mkString
 
-    println(p)
-    println(s)
-    println(r)
-    println()
-
     p == r
   }
 
@@ -366,7 +361,16 @@ object Day20Part2 extends App {
 
   val result = image.map(_.map(fixedTiles)).map(_.map(_.noBorders))
 
-  searchPattern(pattern, mkImage(result))
+  val imageString = mkImage(result)
+
+  val images = Tile(0, imageString.linesIterator.toSeq)
+
+  val monsters = images.all.map(t => searchPattern(pattern, t.mkString)).find(_ > 0).get
+
+  val a = pattern.count(_ == '#') * monsters
+  val b = imageString.count(_ == '#')
+
+  println(b - a)
 }
 
 object Day20Test extends App {
@@ -525,9 +529,15 @@ object Day20Test extends App {
   assert(string.linesIterator.size == 24)
   assert(string.linesIterator.map(_.size).toList.head == 24)
 
-  println(string)
+  val images = Tile(0, string.linesIterator.toSeq)
+  val monsters = images.all.map(t => searchPattern(pattern, t.mkString)).find(_ > 0).get
 
-  println(searchPattern(pattern, string))
+  assert(monsters == 2)
+  
+  val a = pattern.count(_ == '#') * monsters
+  val b = string.count(_ == '#')
+
+  assert(b - a == 273)
 
   println("OK")
 }
