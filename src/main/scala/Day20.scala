@@ -12,7 +12,7 @@ object Day20 {
     def |>[B](f: A => B): B = f(value)
   }
 
-  case class Tile(id: Int, image: Seq[String]) {
+  case class Tile(id: Int, image: Seq[String], fixed: Boolean = false) {
     def top: String = image.head
     def bottom: String = image.last
     def left: String = image.map(_.head).mkString
@@ -21,6 +21,27 @@ object Day20 {
     def rotate: Tile = Tile(id, rotate(image))
     def flip: Tile = Tile(id, image.map(_.reverse))
     def invert: Tile = Tile(id, invert(image))
+
+    def fix: Tile = Tile(id, image, true)
+
+    def all: Seq[Tile] = 
+      if (fixed)
+        Seq(this)
+      else
+        Seq(
+        this,
+        rotate,
+        rotate.flip,
+        flip,
+        flip.rotate,
+        invert,
+        invert.flip,
+        invert.flip.rotate
+      )
+
+    def mkString: String = image.mkString("\n")
+
+    def empty: Tile = Tile(id, image.map(_.map(_ => '?').mkString))
 
     private def rotate(input: Seq[String]): Seq[String] =
       for {
@@ -65,15 +86,7 @@ object Day20 {
   }
 
   def findMatches(tiles: Seq[Tile]): Map[Int, Result] = {
-    val rotated = tiles.map(_.rotate)
-    val rnf = rotated.map(_.flip)
-    val flipped = tiles.map(_.flip)
-    val fnr = flipped.map(_.rotate)
-    val inverted = tiles.map(_.invert)
-    val inf = inverted.map(_.flip)
-    val infnr = inf.map(_.rotate)
-
-    val all = tiles ++ rotated ++ flipped ++ inverted ++ rnf ++ fnr ++ inf ++ infnr
+    val all = tiles.flatMap(_.all)
 
     val result = all.map { t => Result(
       t.id,
@@ -92,8 +105,25 @@ object Day20 {
     input.values.filter(_.count == 2)
       .map(_.id).foldLeft(1L)(_ * _)
 
-  def connected(a: Int, b: Int, matches: Map[Int, Result]): Seq[Int] =
+  def connectedTile(a: Int, b: Int, matches: Map[Int, Result]): Seq[Int] =
     matches.values.filter(r => r.contains(a) && r.contains(b)).map(_.id).toSeq
+
+  def fixTile(current: Tile, right: Tile, bottom: Tile): Tile = {
+    val combinations = for {
+      c <- current.all
+      r <- right.all
+      b <- bottom.all
+    } yield(c, r, b)
+
+    val result = combinations.filter {
+      case (c, r, b) => c.right == r.left && c.bottom == b.top
+    }
+
+    result match {
+      case (c, _, _) :: Nil => c.fix
+      case _ => throw new IllegalStateException(s"${current.id}")
+    }
+  }
 
   def searchPath(from: Int, to: Int, matches: Map[Int, Result]): List[Int] = {
     val borders = matches.filter(_._2.count == 3).toMap
@@ -139,12 +169,37 @@ object Day20 {
     def column(top: Int, prev: List[Int]): List[Int] =
       prev.tail.foldLeft(top :: Nil) {
         case (state, current) =>
-          state :+ connected(state.last, current, matches).find(!prev.contains(_)).get
+          state :+ connectedTile(state.last, current, matches).find(!prev.contains(_)).get
       }
 
-    (1 to 11).foldLeft(left :: Nil) {
+    (1 until top.size).foldLeft(left :: Nil) {
       case (state, current) => state :+ column(top(current), state.last)
     }
+  }
+
+  def fix(image: Seq[List[Int]], tiles: Map[Int, Tile]): Map[Int, Tile] =
+    (0 until (image(0).size - 1)).flatMap { i =>
+      val current = image.map(_(i))
+      val next = image.map(_(i + 1))
+
+      (0 until (current.size - 1)).map { j =>
+        val tile = current(j)
+        val right = next(j)
+        val bottom = current(j + 1)
+
+        (tile, fixTile(tiles(tile), tiles(right), tiles(bottom)))
+      }
+    }.toMap
+
+  def printImage(image: Seq[Seq[Tile]]): Seq[String] = {
+
+    val z = image.map { row =>
+      row.foldLeft(Seq.fill(row(0).image.size)("")) {
+        case (state, tile) => state.zip(tile.image).map { case (a, b) => a + b}
+      }.mkString("\n")
+    }
+
+    z
   }
 
   val input = Source.fromResource("tiles.txt").mkString
@@ -164,10 +219,19 @@ object Day20Part2 extends App {
   val tiles = parse(input)
   val matches = findMatches(tiles)
 
-  val List(top, left, _, _) = searchBorders(matches)
+  val index = tiles.map(t => (t.id -> t)).toMap
+
+  val List(left, top, _, _) = searchBorders(matches)
   assert(top.head == left.head)
 
-  build(matches, left, top).foreach(println)
+  val image = build(matches, left, top)
+
+  val fixedTiles = fix(image, index)
+
+  val result = image
+    .map(row => row.map(t => fixedTiles.getOrElse(t, index(t))))
+
+  println(result.map(_.map(_.id)).mkString("\n"))
 }
 
 object Day20Test extends App {
@@ -296,7 +360,9 @@ object Day20Test extends App {
                 |..#.......
                 |..#.###...""".stripMargin
 
-  val matches = parse(input) |> findMatches
+  val tiles = parse(input)
+  val index = tiles.map(t => (t.id -> t)).toMap
+  val matches = findMatches(tiles)
 
   assert(part1(matches) == 20899048083289L)
 
@@ -305,10 +371,23 @@ object Day20Test extends App {
    * 2729    1427    2473
    * 2971    1489    1171
    */
-  searchBorders(matches).foreach(println)
+  val List(left, top, _, _) = searchBorders(matches)
 
-  assert(connected(2729, 2311, matches).contains(1427))
-  assert(connected(2971, 1427, matches).contains(1489))
+  assert(connectedTile(2729, 2311, matches).contains(1427))
+  assert(connectedTile(2971, 1427, matches).contains(1489))
+
+  println(fixTile(index(1951), index(2311), index(2729)).mkString)
+  println(fixTile(index(2729), index(1427), index(2971)).mkString)
+  //println(fixTile(index(1951), index(1427), index(1171)).mkString)
+
+  val image = build(matches, left, top)
+
+  val fixed = fix(image, index)
+
+  val result = image
+    .map(row => row.map(t => fixed.getOrElse(t, index(t))))
+
+  println(printImage(result).mkString("\n"))
 
   println("OK")
 }
