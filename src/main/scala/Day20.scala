@@ -273,12 +273,12 @@ object Day20 {
     ((fixed ++ rightFixed ++ bottomFixed) :+ fixedLast).toMap
   }
 
-  def printImage(image: Seq[Seq[Tile]]): Seq[String] =
+  def mkImage(image: Seq[Seq[Tile]]): String =
     image.map { row =>
       row.foldLeft(Seq.fill(row(0).image.size)("")) {
         case (state, tile) => state.zip(tile.image).map { case (a, b) => a + b}
       }.mkString("\n")
-    }
+    }.mkString("\n")
 
   val input = Source.fromResource("tiles.txt").mkString
 }
@@ -309,7 +309,7 @@ object Day20Part2 extends App {
   val result = image
     .map(row => row.map(t => fixedTiles.getOrElse(t, index(t))))
 
-  println(result.map(_.map(_.id)).mkString("\n"))
+  println(mkImage(result))
 }
 
 object Day20Test extends App {
@@ -456,7 +456,6 @@ object Day20Test extends App {
 
   println(fixTile(index(1951), index(2311), index(2729)).mkString)
   println(fixTile(index(2729), index(1427), index(2971)).mkString)
-  //println(fixTile(index(1951), index(1427), index(1171)).mkString)
 
   val image = build(matches, left, top)
 
@@ -465,7 +464,7 @@ object Day20Test extends App {
   val result = image
     .map(row => row.map(t => fixed.getOrElse(t, index(t))))
 
-  println(printImage(result).mkString("\n"))
+  println(mkImage(result))
 
   println("OK")
 }
