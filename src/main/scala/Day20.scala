@@ -268,9 +268,9 @@ object Day20 {
 
     val allSlices = (0 until width - dimension._2)
       .map(w => lines.slice(w, w + dimension._2))
-      .flatMap { slice =>
-        (0 until height - dimension._1).map(h => slice.map(_.slice(h, h + dimension._1)))
-    }
+      .flatMap(
+        slice => (0 until height - dimension._1).map(
+          h => slice.map(_.slice(h, h + dimension._1))))
 
     allSlices.map(_.mkString("\n"))
   }
