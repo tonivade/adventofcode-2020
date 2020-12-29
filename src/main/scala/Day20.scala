@@ -1,11 +1,8 @@
 package adventofcode
 
 import scala.io.Source
-import scala.collection.mutable
-import scala.collection.SortedSet
 import scala.collection.mutable.HashSet
 import scala.annotation.tailrec
-import java.awt.Dimension
 
 object Day20 {
 
@@ -13,7 +10,7 @@ object Day20 {
     def |>[B](f: A => B): B = f(value)
   }
 
-  case class Tile(id: Int, image: Seq[String], fixed: Boolean = false) {
+  case class Tile(id: Int, image: Seq[String]) {
     def top: String = image.head
     def bottom: String = image.last
     def left: String = image.map(_.head).mkString
@@ -23,15 +20,10 @@ object Day20 {
     def flip: Tile = Tile(id, image.map(_.reverse))
     def invert: Tile = Tile(id, invert(image))
 
-    def fix: Tile = Tile(id, image, true)
-
-    def noBorders: Tile = Tile(id, crop(image), fixed)
+    def noBorders: Tile = Tile(id, crop(image))
 
     def all: Seq[Tile] = 
-      if (fixed)
-        Seq(this)
-      else
-        Seq(
+      Seq(
         this,
         rotate,
         rotate.flip,
@@ -127,7 +119,7 @@ object Day20 {
     }
 
     result match {
-      case (c, _, _) :: Nil => c.fix
+      case (tile, _, _) :: Nil => tile
       case _ => throw new IllegalStateException(s"${current.id}")
     }
   }
@@ -163,8 +155,8 @@ object Day20 {
         path :+ current :+ to
       else {
         val next = tile.matches
-          .filter(borders.contains(_))
-          .filterNot(path.contains(_))
+          .filter(borders.contains)
+          .filterNot(path.contains)
 
         if (next.size == 1)
           loop(next.head, to, path :+ current)
@@ -173,7 +165,7 @@ object Day20 {
     }
       
     val input = matches(from)
-    val output = input.matches.filter(borders.contains(_))
+    val output = input.matches.filter(borders.contains)
 
     val result = output.map(loop(_, to, from :: Nil)).filterNot(_.isEmpty)
 
@@ -192,7 +184,7 @@ object Day20 {
     }.filterNot(_.isEmpty).toList
   }
 
-  def build(matches: Map[Int, Result], left: List[Int], top: List[Int]): List[List[Int]] = {
+  def buildMatches(matches: Map[Int, Result], left: List[Int], top: List[Int]): List[List[Int]] = {
     def column(top: Int, prev: List[Int]): List[Int] =
       prev.tail.foldLeft(top :: Nil) {
         case (state, current) =>
@@ -204,7 +196,7 @@ object Day20 {
     }
   }
 
-  def fix(image: Seq[List[Int]], tiles: Map[Int, Tile]): Map[Int, Tile] = {
+  def fixTiles(image: Seq[List[Int]], tiles: Map[Int, Tile]): Map[Int, Tile] = {
     // fixes all the tiles, except the last column and row
     def fixed: Seq[(Int, Tile)] = {
       (0 until image(0).size - 1).flatMap { i =>
@@ -319,9 +311,9 @@ object Day20 {
     val List(left, top, _, _) = searchBorders(matches)
     assert(top.head == left.head)
 
-    val image = build(matches, left, top)
+    val image = buildMatches(matches, left, top)
 
-    val fixedTiles = fix(image, index)
+    val fixedTiles = fixTiles(image, index)
 
     val result = image.map(_.map(fixedTiles)).map(_.map(_.noBorders)) |> mkImage
 
@@ -498,9 +490,9 @@ object Day20Test extends App {
   println(fixTileLeftBottom(index(1951), index(2311), index(2729)).mkString)
   println(fixTileLeftBottom(index(2729), index(1427), index(2971)).mkString)
 
-  val image = build(matches, left, top)
+  val image = buildMatches(matches, left, top)
 
-  val fixed = fix(image, index)
+  val fixed = fixTiles(image, index)
 
   val result = image.map(_.map(fixed)).map(_.map(_.noBorders))
   
