@@ -5,6 +5,7 @@ import scala.collection.mutable
 import scala.collection.SortedSet
 import scala.collection.mutable.HashSet
 import scala.annotation.tailrec
+import java.awt.Dimension
 
 object Day20 {
 
@@ -41,9 +42,9 @@ object Day20 {
         invert.flip.rotate
       )
 
-    def mkString: String = image.mkString("\n")
+    def count: Int = image.mkString.count(_ == '#')
 
-    def empty: Tile = Tile(id, image.map(_.map(_ => '?').mkString))
+    def mkString: String = image.mkString("\n")
 
     private def rotate(input: Seq[String]): Seq[String] =
       for {
@@ -113,74 +114,43 @@ object Day20 {
 
   def connectedTile(a: Int, b: Int, matches: Map[Int, Result]): Seq[Int] =
     matches.values.filter(r => r.contains(a) && r.contains(b)).map(_.id).toSeq
-
-  def fixTile4(current: Tile, left: Tile, top: Tile): Tile = {
+  
+  def fixTile(current: Tile, t1: Tile, t2: Tile)(predicate: (Tile, Tile, Tile) => Boolean): Tile = {
     val combinations = for {
       c <- current.all
-      l <- left.all
-      t <- top.all
-    } yield(c, l, t)
+      a <- t1.all
+      b <- t2.all
+    } yield(c, a, b)
 
     val result = combinations.filter {
+      case (c, a, b) => predicate(c, a, b)
+    }
+
+    result match {
+      case (c, _, _) :: Nil => c.fix
+      case _ => throw new IllegalStateException(s"${current.id}")
+    }
+  }
+  
+  def fixTileLeftTop(current: Tile, left: Tile, top: Tile): Tile =
+    fixTile(current, left, top) {
       case (c, l, t) => c.left == l.right && c.top == t.bottom
     }
 
-    result match {
-      case (c, _, _) :: Nil => c.fix
-      case _ => throw new IllegalStateException(s"${current.id}")
-    }
-  }
-
-  def fixTile3(current: Tile, right: Tile, top: Tile): Tile = {
-    val combinations = for {
-      c <- current.all
-      r <- right.all
-      t <- top.all
-    } yield(c, r, t)
-
-    val result = combinations.filter {
+  def fixTileRightTop(current: Tile, right: Tile, top: Tile): Tile =
+    fixTile(current, right, top) {
       case (c, r, t) => c.right == r.left && c.top == t.bottom
     }
 
-    result match {
-      case (c, _, _) :: Nil => c.fix
-      case _ => throw new IllegalStateException(s"${current.id}")
-    }
-  }
-
-  def fixTile2(current: Tile, left: Tile, bottom: Tile): Tile = {
-    val combinations = for {
-      c <- current.all
-      l <- left.all
-      b <- bottom.all
-    } yield(c, l, b)
-
-    val result = combinations.filter {
+  def fixTileLeftBottom(current: Tile, left: Tile, bottom: Tile): Tile =
+    fixTile(current, left, bottom) {
       case (c, l, b) => c.left == l.right && c.bottom == b.top
     }
 
-    result match {
-      case (c, _, _) :: Nil => c.fix
-      case _ => throw new IllegalStateException(s"${current.id}")
-    }
-  }
-
-  def fixTile(current: Tile, right: Tile, bottom: Tile): Tile = {
-    val combinations = for {
-      c <- current.all
-      r <- right.all
-      b <- bottom.all
-    } yield(c, r, b)
-
-    val result = combinations.filter {
+  def fixTileRightBottom(current: Tile, right: Tile, bottom: Tile): Tile =
+    fixTile(current, right, bottom) {
       case (c, r, b) => c.right == r.left && c.bottom == b.top
     }
-
-    result match {
-      case (c, _, _) :: Nil => c.fix
-      case _ => throw new IllegalStateException(s"${current.id}")
-    }
-  }
 
   def searchPath(from: Int, to: Int, matches: Map[Int, Result]): List[Int] = {
     val borders = matches.filter(_._2.count == 3).toMap
@@ -235,46 +205,58 @@ object Day20 {
   }
 
   def fix(image: Seq[List[Int]], tiles: Map[Int, Tile]): Map[Int, Tile] = {
-    val fixed = (0 until (image(0).size - 1)).flatMap { i =>
-      val current = image.map(_(i))
-      val next = image.map(_(i + 1))
+    // fixes all the tiles, except the last column and row
+    def fixed: Seq[(Int, Tile)] = {
+      (0 until image(0).size - 1).flatMap { i =>
+        val current = image.map(_(i))
+        val next = image.map(_(i + 1))
 
-      (0 until (current.size - 1)).map { j =>
-        val tile = current(j)
-        val right = next(j)
-        val bottom = current(j + 1)
+        (0 until current.size - 1).map { j =>
+          val tile = current(j)
+          val right = next(j)
+          val bottom = current(j + 1)
 
-        (tile, fixTile(tiles(tile), tiles(right), tiles(bottom)))
+          (tile, fixTileRightBottom(tiles(tile), tiles(right), tiles(bottom)))
+        }
       }
     }
 
-    val right = image.map(_(image.size - 1))
-    val rightPrev = image.map(_(image.size - 2))
-    
-    val rightFixed = (0 until (right.size - 1)).map { j =>
-      val tile = right(j)
-      val left = rightPrev(j)
-      val bottom = right(j + 1)
+    // fixes the last column except the last tile
+    def rightFixed: Seq[(Int, Tile)] = {
+      val right = image.map(_(image.size - 1))
+      val rightPrev = image.map(_(image.size - 2))
+      
+      (0 until right.size - 1).map { j =>
+        val tile = right(j)
+        val left = rightPrev(j)
+        val bottom = right(j + 1)
 
-      (tile, fixTile2(tiles(tile), tiles(left), tiles(bottom)))
+        (tile, fixTileLeftBottom(tiles(tile), tiles(left), tiles(bottom)))
+      }
     }
 
-    val bottom = image(image.size - 1)
-    val bottomPrev = image(image.size - 2)
+    // fixes the last row except the last tile
+    def bottomFixed: Seq[(Int, Tile)] = {
+      val bottom = image(image.size - 1)
+      val bottomPrev = image(image.size - 2)
 
-    val bottomFixed = (0 until (bottom.size - 1)).map { j =>
-      val tile = bottom(j)
-      val right = bottom(j + 1)
-      val top = bottomPrev(j)
+      (0 until bottom.size - 1).map { j =>
+        val tile = bottom(j)
+        val right = bottom(j + 1)
+        val top = bottomPrev(j)
 
-      (tile, fixTile3(tiles(tile), tiles(right), tiles(top)))
+        (tile, fixTileRightTop(tiles(tile), tiles(right), tiles(top)))
+      }
     }
 
-    val last = image.last.last
-    val left = image.last.dropRight(1).last
-    val top = image.map(_.last).dropRight(1).last
+    // fixes the last tile
+    def fixedLast: (Int, Tile) = {
+      val last = image.last.last
+      val left = image.last.dropRight(1).last
+      val top = image.map(_.last).dropRight(1).last
 
-    val fixedLast = (last, fixTile4(tiles(last), tiles(left), tiles(top)))
+      (last, fixTileLeftTop(tiles(last), tiles(left), tiles(top)))
+    }
 
     ((fixed ++ rightFixed ++ bottomFixed) :+ fixedLast).toMap
   }
@@ -287,46 +269,63 @@ object Day20 {
     }.mkString("\n")
 
   def views(dimension: (Int, Int), image: String): Seq[String] = {
-
     val lines = image.linesIterator.toList
 
     val width = lines.map(_.size).head
     val height = lines.size
 
-    val y = for {
-      w <- (0 until width - dimension._2)
-    } yield lines.slice(w, w + dimension._2)
-
-    val xy = y.flatMap { slice =>
-      for {
-        h <- (0 until height - dimension._1)
-      } yield slice.map(_.slice(h, h + dimension._1))
+    val allSlices = (0 until width - dimension._2)
+      .map(w => lines.slice(w, w + dimension._2))
+      .flatMap { slice =>
+        (0 until height - dimension._1).map(h => slice.map(_.slice(h, h + dimension._1)))
     }
 
-    xy.map(_.mkString("\n"))
+    allSlices.map(_.mkString("\n"))
   }
 
   def comparePattern(pattern: String, slice: String): Boolean = {
-    val p = pattern.linesIterator.mkString
-    val s = slice.linesIterator.mkString
+    val flatPattern = pattern.linesIterator.mkString
+    val flatSlice = slice.linesIterator.mkString
 
-    val r = p.zip(s).map {
+    val flatResult = flatPattern.zip(flatSlice).map {
       case (' ', _) => ' '
       case ('#', '#') => '#'
       case ('#', c) => c
       case (a, b) => throw new IllegalStateException(s"$a,$b")
     }.mkString
 
-    p == r
+    flatPattern == flatResult
   }
 
-  def searchPattern(pattern: String, image: String): Int = {
+  def searchPattern(pattern: String, tile: Tile): Int = {
     val width = pattern.linesIterator.map(_.size).toList.head
     val height = pattern.linesIterator.size
 
-    val allViews = views((width, height), image)
+    val allViews = views((width, height), tile.mkString)
 
     allViews.filter(comparePattern(pattern, _)).size
+  }
+
+  def countPattern(pattern: String, image: Tile): Int = {
+    // should be only one with monsters
+    val monsters = image.all.map(searchPattern(pattern, _)).find(_ > 0).get
+
+    pattern.count(_ == '#') * monsters
+  }
+
+  def buildImage(tiles: Seq[Tile], matches: Map[Int, Result]): Tile = {
+    val index = tiles.map(t => (t.id -> t)).toMap
+
+    val List(left, top, _, _) = searchBorders(matches)
+    assert(top.head == left.head)
+
+    val image = build(matches, left, top)
+
+    val fixedTiles = fix(image, index)
+
+    val result = image.map(_.map(fixedTiles)).map(_.map(_.noBorders)) |> mkImage
+
+    Tile(0, result.linesIterator.toSeq)
   }
 
   val input = Source.fromResource("tiles.txt").mkString
@@ -349,28 +348,9 @@ object Day20Part2 extends App {
 
   val tiles = parse(input)
   val matches = findMatches(tiles)
+  val image = buildImage(tiles, matches)
 
-  val index = tiles.map(t => (t.id -> t)).toMap
-
-  val List(left, top, _, _) = searchBorders(matches)
-  assert(top.head == left.head)
-
-  val image = build(matches, left, top)
-
-  val fixedTiles = fix(image, index)
-
-  val result = image.map(_.map(fixedTiles)).map(_.map(_.noBorders))
-
-  val imageString = mkImage(result)
-
-  val images = Tile(0, imageString.linesIterator.toSeq)
-
-  val monsters = images.all.map(t => searchPattern(pattern, t.mkString)).find(_ > 0).get
-
-  val a = pattern.count(_ == '#') * monsters
-  val b = imageString.count(_ == '#')
-
-  println(b - a)
+  println(image.count - countPattern(pattern, image))
 }
 
 object Day20Test extends App {
@@ -515,8 +495,8 @@ object Day20Test extends App {
   assert(connectedTile(2729, 2311, matches).contains(1427))
   assert(connectedTile(2971, 1427, matches).contains(1489))
 
-  println(fixTile(index(1951), index(2311), index(2729)).mkString)
-  println(fixTile(index(2729), index(1427), index(2971)).mkString)
+  println(fixTileLeftBottom(index(1951), index(2311), index(2729)).mkString)
+  println(fixTileLeftBottom(index(2729), index(1427), index(2971)).mkString)
 
   val image = build(matches, left, top)
 
@@ -530,7 +510,7 @@ object Day20Test extends App {
   assert(string.linesIterator.map(_.size).toList.head == 24)
 
   val images = Tile(0, string.linesIterator.toSeq)
-  val monsters = images.all.map(t => searchPattern(pattern, t.mkString)).find(_ > 0).get
+  val monsters = images.all.map(searchPattern(pattern, _)).find(_ > 0).get
 
   assert(monsters == 2)
   
