@@ -170,7 +170,7 @@ object Day24 {
 object Day24Part1 extends App {
   import Day24._
 
-  val input = Source.fromResource("hexagon.txt").mkString
+  val input = Source.fromResource("day24.txt").mkString
 
   val result = perform(parseAll(input))
 

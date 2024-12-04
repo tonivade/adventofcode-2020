@@ -58,7 +58,7 @@ object Matrix {
   }
 
   def load(): Matrix = {
-    val rows = Source.fromFile("src/main/resources/map.txt").getLines().map(parseLine).toIndexedSeq
+    val rows = Source.fromFile("src/main/resources/day3.txt").getLines().map(parseLine).toIndexedSeq
     Matrix(rows)
   }
 }

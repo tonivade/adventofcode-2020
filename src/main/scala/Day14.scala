@@ -80,7 +80,7 @@ object Day14 {
     result
   }
   
-  val input = Source.fromResource("mask.txt").getLines().map(parseLine).toVector
+  val input = Source.fromResource("day14.txt").getLines().map(parseLine).toVector
 }
 
 object Day14Part1 extends App {

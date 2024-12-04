@@ -34,7 +34,7 @@ object Day10 {
     result(adapters.max)
   }
 
-  val input = Source.fromResource("jolts.txt").getLines().map(_.toInt).toList
+  val input = Source.fromResource("day10.txt").getLines().map(_.toInt).toList
 }
 
 object Day10Part1 extends App {

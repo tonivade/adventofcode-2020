@@ -63,7 +63,7 @@ object Day21 {
 object Day21Part1 extends App {
   import Day21._
 
-  val items = Source.fromResource("ingredients.txt").getLines().map(parseLine).toList
+  val items = Source.fromResource("day21.txt").getLines().map(parseLine).toList
   val probable = probableAllergens(items)
   val result = allIngredients(items) -- calculateAllergens(probable)
   println(countIngredients(items, result))

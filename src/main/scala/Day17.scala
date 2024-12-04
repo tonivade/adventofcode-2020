@@ -284,7 +284,7 @@ object Day17 {
 object Day17Part1 extends App {
   import Day17._
 
-  val input = Source.fromResource("space.txt").mkString
+  val input = Source.fromResource("day17.txt").mkString
 
   val grid = Grid(Map(0 -> Layer(parseLayer(input)).pad))
 
@@ -296,7 +296,7 @@ object Day17Part1 extends App {
 object Day17Part2 extends App {
   import Day17._
 
-  val input = Source.fromResource("space.txt").mkString
+  val input = Source.fromResource("day17.txt").mkString
 
   val grid = Grid(Map(0 -> Layer(parseLayer(input)).pad))
   val hypergrid = HyperGrid(Map(0 -> grid))

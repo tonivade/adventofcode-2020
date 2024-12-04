@@ -27,7 +27,7 @@ object Day25 {
 object Day25Part1 extends App {
   import Day25._
 
-  val Seq(card, door) = Source.fromResource("keys.txt").getLines().map(_.toLong).toSeq
+  val Seq(card, door) = Source.fromResource("day25.txt").getLines().map(_.toLong).toSeq
 
   val loopSizeCard = bruteforce(card)(subject).get
 

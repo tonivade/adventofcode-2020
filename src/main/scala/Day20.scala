@@ -320,7 +320,7 @@ object Day20 {
     Tile(0, result.linesIterator.toSeq)
   }
 
-  val input = Source.fromResource("tiles.txt").mkString
+  val input = Source.fromResource("day20.txt").mkString
 
   val pattern = """                  # 
                   |#    ##    ##    ###

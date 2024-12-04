@@ -112,7 +112,7 @@ object Day11 {
       caos(m, rules)
   }
 
-  val input = parseMatrix(Source.fromResource("ferry.txt").mkString)
+  val input = parseMatrix(Source.fromResource("day11.txt").mkString)
 }
 
 object Day11Part1 extends App {

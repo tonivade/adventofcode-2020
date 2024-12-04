@@ -157,7 +157,7 @@ object Day12 {
       case ((dir, current, waypoint), MoveAction(Left, x)) => (dir, current, waypoint.left(x))
     }
 
-  val input = Source.fromResource("navigation.txt").getLines().map(parseLine).toList
+  val input = Source.fromResource("day12.txt").getLines().map(parseLine).toList
 }
 
 object Day12Part1 extends App {

@@ -10,7 +10,7 @@ object Day6 {
   def intersect(input: Array[Set[Char]]): String =
     input.reduce((a, b) => a.intersect(b)).mkString
 
-  val input = Source.fromFile("src/main/resources/customs.txt").mkString
+  val input = Source.fromFile("src/main/resources/day6.txt").mkString
 
   def parse(answers: String, parser: Array[Set[Char]] => String) = 
     answers.split("\\n\\n").map(_.trim()).map(_.split('\n').map(_.toSet)).map(parser)

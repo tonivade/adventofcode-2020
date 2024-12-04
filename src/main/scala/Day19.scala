@@ -87,7 +87,7 @@ object Day19 {
   def search(rules: Rules, lines: String): Int =
     lines.linesIterator.filter(rules.applyTo(0)).size
 
-  val Array(rulesPart, linesPart) = Source.fromResource("rules.txt").mkString.split("\\n\\n")
+  val Array(rulesPart, linesPart) = Source.fromResource("day19.txt").mkString.split("\\n\\n")
 
   def applyRule42(rules: Rules, line: String, consumed: Int = 0, seq: List[Int] = List.empty): Option[(Int, List[Int])] =
     applyRule(rules(42), line)(rules) match {

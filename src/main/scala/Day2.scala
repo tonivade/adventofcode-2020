@@ -38,7 +38,7 @@ object Day2 {
     Password(min, max, letter, password)
   }
 
-  val passwords = Source.fromFile("src/main/resources/passwords.txt").getLines().map(parseLine).toList
+  val passwords = Source.fromFile("src/main/resources/day2.txt").getLines().map(parseLine).toList
   
   def filter(filter: Password => Boolean) = passwords.filter(filter)
 }

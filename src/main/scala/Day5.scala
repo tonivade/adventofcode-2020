@@ -30,7 +30,7 @@ object Day5 {
 
   def seatId(seat: (Int, Int)) = (seat._1 * 8) + seat._2
   
-  val seatIds = Source.fromFile("src/main/resources/seats.txt").getLines().map(calculateSeat).map(seatId).toList
+  val seatIds = Source.fromFile("src/main/resources/day5.txt").getLines().map(calculateSeat).map(seatId).toList
 }
 
 object Day5Part1 extends App {

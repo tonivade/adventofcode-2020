@@ -77,7 +77,7 @@ object Day16 {
   def readTicket(fields: Map[Int, String], ticket: Seq[Int]): Map[String, Int] =
     fields.map { case (pos, name) => (name, ticket(pos)) }.toMap
 
-  val input = Source.fromResource("tickets.txt").mkString
+  val input = Source.fromResource("day16.txt").mkString
 
   val (rules, yours, nearby) = parse(input)
 }

@@ -4,7 +4,7 @@ import scala.io.Source
 
 object Day1 {
    
-  val numbers = Source.fromFile("src/main/resources/input.txt").getLines().map(_.toInt).toList
+  val numbers = Source.fromFile("src/main/resources/day1.txt").getLines().map(_.toInt).toList
 
   def combinations(number: Int, sum: Int): List[Int] = 
     numbers.combinations(number).find(x => x.fold(0)(_ + _) == sum).orNull

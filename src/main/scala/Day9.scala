@@ -18,7 +18,7 @@ object Day9 {
   def findSecret(input: Array[Long], preambleSize: Int): List[Long] =
     findInvalid(input, preambleSize).map(findSum(input, _)).map(x => x.min + x.max)
   
-  val input = Source.fromFile("src/main/resources/encrypted.txt").getLines().map(_.toLong).toArray
+  val input = Source.fromFile("src/main/resources/day9.txt").getLines().map(_.toLong).toArray
 }
 
 object Day9Part1 extends App {

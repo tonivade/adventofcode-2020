@@ -42,7 +42,7 @@ object Day7 {
   def count(name: String, bags: Map[String, Bag]): Int =
     bags(name).map.foldLeft(1)((c, t) => c + (count(t._1, bags) * t._2))
 
-  val input = Source.fromFile("src/main/resources/bags.txt").getLines().toList
+  val input = Source.fromFile("src/main/resources/day7.txt").getLines().toList
 
 }
 

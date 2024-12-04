@@ -6,7 +6,7 @@ import scala.sys.process.processInternal
 
 object Day13 {
   
-  val input = Source.fromResource("buses.txt").getLines().toVector
+  val input = Source.fromResource("day13.txt").getLines().toVector
 
   def parseBuses(line: String): Seq[Int] =
     line.split(",").filterNot(_ == "x").map(_.toInt)

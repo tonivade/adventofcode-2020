@@ -4,3 +4,4 @@
 project/project
 project/metals.sbt
 src/main/resources/*.txt
+.env

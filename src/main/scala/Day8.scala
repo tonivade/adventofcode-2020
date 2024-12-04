@@ -45,7 +45,7 @@ object Day8 {
   def fixProgram(program: Program): Either[Int, Int] = 
     program.zipWithIndex.filter(_._1.isInstanceOf[Jmp]).map(_._2).map(fix(program, _)).map(runProgram(_)).filter(_.isRight).head
 
-  val program = parseProgram(Source.fromFile("src/main/resources/boot.txt").mkString)
+  val program = parseProgram(Source.fromFile("src/main/resources/day8.txt").mkString)
 }
 
 object Day8Part1 extends App {

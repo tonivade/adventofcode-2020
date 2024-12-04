@@ -89,7 +89,7 @@ object Passport {
   }
 
   def load: IndexedSeq[Try[Passport]] =
-    Source.fromFile("src/main/resources/passports.txt").mkString.split("\\n\\n")
+    Source.fromFile("src/main/resources/day4.txt").mkString.split("\\n\\n")
       .map(_.replace('\n', ' ')).map(parsePassport).toIndexedSeq
 }
 

@@ -113,7 +113,7 @@ object Day22 {
 object Day22Part1 extends App {
   import Day22._
 
-  val Array(p1, p2) = Source.fromResource("game.txt").mkString.split("\n\n")
+  val Array(p1, p2) = Source.fromResource("day22.txt").mkString.split("\n\n")
 
   val player1 = Player(p1.split("\n").tail.map(_.toInt).toList)
   val player2 = Player(p2.split("\n").tail.map(_.toInt).toList)

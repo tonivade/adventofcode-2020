@@ -83,7 +83,7 @@ object Day18 {
 object Day18Part1 extends App {
   import Day18._
 
-  val input = Source.fromResource("homework.txt").getLines().map(toRPN).map(parse)
+  val input = Source.fromResource("day18.txt").getLines().map(toRPN).map(parse)
 
   println(input.map(_.eval).foldLeft(BigInt(0))(_ + _))
 }
@@ -91,7 +91,7 @@ object Day18Part1 extends App {
 object Day18Part2 extends App {
   import Day18._
 
-  val input = Source.fromResource("homework.txt").getLines().map(toRPN2).map(parse)
+  val input = Source.fromResource("day18.txt").getLines().map(toRPN2).map(parse)
 
   println(input.map(_.eval).foldLeft(BigInt(0))(_ + _))
 }
